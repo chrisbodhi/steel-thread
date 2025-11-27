@@ -5,15 +5,3 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 version = "0.0.1"
-
-[package]
-name = "steel-thread"
-version = "0.1.0"
-edition = "2021"
-authors = ["Brighton Actuation Systems <chrisbodhi@gmail.com>"]
-
-
-
-[dependencies]
-web = { path = "crates/web" }
-tokio = { version = "1.42", features = [ "full" ] }

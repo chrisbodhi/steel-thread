@@ -13,22 +13,18 @@ This is a Rust workspace with multiple crates:
 - **`crates/validation`** - Domain logic and validation rules
   - Manufacturing constraint checks
   - Geometric validation
-- **Root binary** - Convenience wrapper that runs the web server
 
 ## Running the Project
 
-### Run the web server (any of these work):
+### Run the web server:
 
 ```bash
-# From root (runs web crate)
-cargo run
-
-# Or run web crate directly
+# Run from workspace root
 cargo run -p web
 
 # Or build and run the binary
-cargo build -p web
-./target/debug/web
+cargo build -p web --release
+./target/release/web
 ```
 
 The server will start on `http://localhost:3030`
