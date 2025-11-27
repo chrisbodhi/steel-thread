@@ -1,0 +1,10 @@
+[package]
+name = "validation"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# Pure Rust library - no WASM concerns
+crate-type = ["rlib"]
+
+[dependencies]

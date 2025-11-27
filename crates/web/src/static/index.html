@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <title>Brighton Actuation Systems</title>
+    </head>
+    <body>
+        <header>
+            <h1>Brighton Actuation Systems</h1>
+            <h2>Order form</h2>
+        </header>
+
+        <main>
+            <h3>Linear actuator plate</h3>
+            <!--col 1/2-->
+            <img
+                id="plate_schematic"
+                src=""
+                alt="Linear actuator plate schematic"
+            />
+
+            <!--col 2/2-->
+            <!--user-specified params-->
+            <form action="/" method="post" enctype="multipart/form-data">
+                <input
+                    type="range"
+                    id="bolt_spacing"
+                    value="60"
+                    min="20"
+                    max="100"
+                />
+                <label for="bolt_spacing">Bolt spacing (mm)</label>
+                <input type="text" id="bolt_spacing_val" />
+                <input
+                    type="range"
+                    id="bolt_diameter"
+                    value="10"
+                    min="6"
+                    max="20"
+                />
+                <label for="bolt_diameter">Bolt diameter (mm)</label>
+                <input type="text" id="bolt_diameter_val" />
+                <input
+                    type="range"
+                    id="pin_diameter"
+                    value="10"
+                    min="6"
+                    max="15"
+                />
+                <label for="pin_diameter">Pin diameter (mm)</label>
+                <input type="text" id="pin_diameter_val" />
+                <input
+                    type="range"
+                    id="plate_thickness"
+                    value="8"
+                    min="6"
+                    max="20"
+                    step="2"
+                />
+                <label for="plate_thickness">Plate thickness (mm)</label>
+                <input type="text" id="plate_thickness_val" />
+                <input
+                    type="range"
+                    id="bracket_height"
+                    value="40"
+                    min="20"
+                    max="60"
+                />
+                <label for="bracket_height">Bracket height (mm)</label>
+                <input type="text" id="bracket_height_val" />
+                <input type="submit" value="Go" />
+            </form>
+            <!--a generic description of the product-->
+        </main>
+        <footer>Built in Pittsburgh, PA, USA</footer>
+        <script>
+            <!-- for the glory of God in latin -->
+            const img = document.getElementById("plate_schematic");
+            const socket = new WebSocket("ws://localhost:3030/ws");
+            socket.onopen = () => {
+                console.log("connected!");
+                socket.send("hola, server");
+            };
+
+            // todo: socket error handling
+
+            const ranges = document.querySelectorAll('input[type="range"]');
+            console.log(ranges);
+            ranges.forEach((el) => {
+                el.addEventListener("change", updateViaWs);
+                const itsVal = document.querySelector(`#${el.id}_val`);
+                // TODO: this is not bidirectional
+                itsVal.value = el.value;
+            });
+
+            function updateViaWs(event) {
+                const element = event.target;
+                const prop = element.id;
+                const val = element.value;
+                console.log(`prop: ${prop}, val: ${val}`);
+                socket.send("param:" + prop + "," + val);
+                socket.onmessage = (event) => {
+                    console.log("received:", event.data);
+                    // TODO: update plate_schematic
+                    // img.src = event.data;
+                };
+            }
+        </script>
+    </body>
+</html>
