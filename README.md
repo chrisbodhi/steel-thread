@@ -6,13 +6,19 @@ An actuator plate configurator exploring web → parametric CAD → quote pipeli
 
 This is a Rust workspace with multiple crates:
 
+- **`crates/domain`** - Core domain types and data structures
+  - `ActuatorPlate` - Main domain model
+  - `Millimeters` - Type-safe unit wrapper
+  - Shared across validation and web layers
+- **`crates/validation`** - Business logic and validation rules
+  - Manufacturing constraint checks
+  - Geometric validation
+  - Depends on domain types
 - **`crates/web`** - Web server (Axum) for the plate configurator
   - Standalone deployable binary
   - Handles form submissions and plate orders
   - Serves static HTML interface
-- **`crates/validation`** - Domain logic and validation rules
-  - Manufacturing constraint checks
-  - Geometric validation
+  - Depends on domain and validation crates
 
 ## Running the Project
 
@@ -44,6 +50,14 @@ cargo build -p web
 ### Run tests
 ```bash
 cargo test
+```
+
+### With `bacon`
+
+#### Run the web endpoint
+
+```bash
+bacon run-long
 ```
 
 ## Project Documentation
