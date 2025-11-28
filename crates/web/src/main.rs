@@ -1,4 +1,4 @@
 #[tokio::main]
-async fn main() {
-    web::run().await;
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    web::run().await
 }

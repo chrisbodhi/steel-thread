@@ -14,26 +14,39 @@ This is a Rust workspace with multiple crates:
   - Manufacturing constraint checks
   - Geometric validation
   - Depends on domain types
-- **`crates/web`** - Web server (Axum) for the plate configurator
-  - Standalone deployable binary
-  - Handles form submissions and plate orders
-  - Serves static HTML interface
+- **`crates/web`** - Web application with Leptos SSR and Axum API
+  - Leptos SSR frontend for the plate configurator
+  - Axum REST API endpoints (`/api/health`, `/api/plate`)
+  - Server-side rendering with client-side hydration
   - Depends on domain and validation crates
 
 ## Running the Project
 
-### Run the web server:
+### Prerequisites
+
+Install cargo-leptos for building and running the SSR application:
 
 ```bash
-# Run from workspace root
-cargo run -p web
+cargo install cargo-leptos
+```
 
-# Or build and run the binary
-cargo build -p web --release
-./target/release/web
+### Run the web application:
+
+```bash
+# Run in development mode with hot reload
+cargo leptos watch
+
+# Or build and run for production
+cargo leptos build --release
+cargo leptos serve --release
 ```
 
 The server will start on `http://localhost:3030`
+
+### API Endpoints
+
+- `GET /api/health` - Health check endpoint
+- `POST /api/plate` - Submit actuator plate configuration for validation
 
 ## Development
 
@@ -42,10 +55,12 @@ The server will start on `http://localhost:3030`
 cargo build
 ```
 
-### Build just the web crate
+### Build the web crate (server-side only)
 ```bash
 cargo build -p web
 ```
+
+Note: For full Leptos SSR build (server + WASM client), use `cargo leptos build`
 
 ### Run tests
 ```bash
@@ -53,6 +68,12 @@ cargo test
 ```
 
 ### With `bacon`
+
+Install with
+
+```bash
+cargo install --locked bacon --features "clipboard sound"
+```
 
 #### Run the web endpoint
 
