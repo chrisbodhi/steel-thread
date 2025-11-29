@@ -27,8 +27,10 @@ pub async fn submit_plate(
 }
 
 #[component]
-pub fn PlateForm() -> impl IntoView {
-    let submit_action = ServerAction::<SubmitPlate>::new();
+pub fn PlateForm(
+    #[prop(into)] action: ServerAction<SubmitPlate>,
+) -> impl IntoView {
+    let submit_action = action;
 
     // Field error states
     let (bolt_spacing_error, set_bolt_spacing_error) = signal(None::<String>);
@@ -159,15 +161,6 @@ pub fn PlateForm() -> impl IntoView {
             >
                 {move || if submit_action.pending().get() { "Submitting..." } else { "Submit Plate" }}
             </button>
-
-            {move || {
-                submit_action.value().get().map(|result| {
-                    match result {
-                        Ok(msg) => view! { <div class="response-message success">{msg}</div> }.into_any(),
-                        Err(e) => view! { <div class="response-message error">{e.to_string()}</div> }.into_any(),
-                    }
-                })
-            }}
         </ActionForm>
     }
 }

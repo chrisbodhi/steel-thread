@@ -5,7 +5,8 @@ use leptos_router::{
     StaticSegment,
 };
 
-use crate::components::plate_form::PlateForm;
+use crate::components::plate_form::{PlateForm, SubmitPlate};
+use crate::components::response_panel::ResponsePanel;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -30,13 +31,22 @@ pub fn App() -> impl IntoView {
 
 #[component]
 fn HomePage() -> impl IntoView {
+    let submit_action = ServerAction::<SubmitPlate>::new();
+
     view! {
         <div class="container">
             <h1 class="text-red-500">Actuator Plate Configurator</h1>
-                <div class="container columns-2xs">
+            <div class="panel-grid">
+                <div class="panel">
                     <img src="https://i.pinimg.com/originals/35/c0/2b/35c02b534cdbacbea92ae64ee3fe0a1d.png" alt="Cat CAD" />
-                    <PlateForm/>
                 </div>
+                <div class="panel">
+                    <PlateForm action=submit_action/>
+                </div>
+                <div class="panel">
+                    <ResponsePanel action=submit_action/>
+                </div>
+            </div>
         </div>
     }
 }
