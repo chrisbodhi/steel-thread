@@ -1,146 +1,170 @@
 use domain::{ActuatorPlate, Millimeters};
 use leptos::prelude::*;
 
+#[server]
+pub async fn submit_plate(
+    bolt_spacing: u16,
+    bolt_diameter: u16,
+    bracket_height: u16,
+    pin_diameter: u16,
+    plate_thickness: u16,
+) -> Result<String, ServerFnError> {
+    let plate = ActuatorPlate {
+        bolt_spacing: Millimeters(bolt_spacing),
+        bolt_diameter: Millimeters(bolt_diameter),
+        bracket_height: Millimeters(bracket_height),
+        pin_diameter: Millimeters(pin_diameter),
+        plate_thickness: Millimeters(plate_thickness),
+    };
+
+    if let Err(e) = validation::validate(&plate) {
+        return Err(ServerFnError::new(e.to_string()));
+    }
+
+    Ok("Plate submitted successfully!".to_string())
+}
+
 #[component]
 pub fn PlateForm() -> impl IntoView {
-    let (bolt_spacing, set_bolt_spacing) = signal(String::from("60"));
-    let (bolt_diameter, set_bolt_diameter) = signal(String::from("10"));
-    let (bracket_height, set_bracket_height) = signal(String::from("40"));
-    let (pin_diameter, set_pin_diameter) = signal(String::from("10"));
-    let (plate_thickness, set_plate_thickness) = signal(String::from("8"));
-    let (response_message, set_response_message) = signal(None::<String>);
-    let (is_loading, set_is_loading) = signal(false);
+    let submit_action = ServerAction::<SubmitPlate>::new();
 
-    let submit_plate = Action::new_local(move |_: &()| {
-        let bolt_spacing_val = bolt_spacing.get();
-        let bolt_diameter_val = bolt_diameter.get();
-        let bracket_height_val = bracket_height.get();
-        let pin_diameter_val = pin_diameter.get();
-        let plate_thickness_val = plate_thickness.get();
+    // Field error states
+    let (bolt_spacing_error, set_bolt_spacing_error) = signal(None::<String>);
+    let (bolt_diameter_error, set_bolt_diameter_error) = signal(None::<String>);
+    let (bracket_height_error, set_bracket_height_error) = signal(None::<String>);
+    let (pin_diameter_error, set_pin_diameter_error) = signal(None::<String>);
+    let (plate_thickness_error, set_plate_thickness_error) = signal(None::<String>);
 
-        async move {
-            set_is_loading.set(true);
-            set_response_message.set(None);
-
-            // Parse inputs
-            let bs = bolt_spacing_val.parse::<u16>().ok();
-            let bd = bolt_diameter_val.parse::<u16>().ok();
-            let bh = bracket_height_val.parse::<u16>().ok();
-            let pd = pin_diameter_val.parse::<u16>().ok();
-            let pt = plate_thickness_val.parse::<u16>().ok();
-
-            if bs.is_none() || bd.is_none() || bh.is_none() || pd.is_none() || pt.is_none() {
-                set_is_loading.set(false);
-                set_response_message.set(Some("Invalid input values".to_string()));
-                return;
-            }
-
-            let plate = ActuatorPlate {
-                bolt_spacing: Millimeters(bs.unwrap()),
-                bolt_diameter: Millimeters(bd.unwrap()),
-                bracket_height: Millimeters(bh.unwrap()),
-                pin_diameter: Millimeters(pd.unwrap()),
-                plate_thickness: Millimeters(pt.unwrap()),
-            };
-
-            // Make API call
-            let response = reqwest::Client::new()
-                .post("/api/plate")
-                .json(&plate)
-                .send()
-                .await;
-
-            set_is_loading.set(false);
-
-            match response {
-                Ok(resp) if resp.status().is_success() => {
-                    set_response_message.set(Some("Plate submitted successfully!".to_string()));
-                }
-                Ok(resp) => {
-                    let status = resp.status();
-                    set_response_message.set(Some(format!("Error: {}", status)));
-                }
-                Err(e) => {
-                    set_response_message.set(Some(format!("Request failed: {}", e)));
-                }
-            }
+    let validate_field = move |value: &str, validator: fn(u16) -> Result<(), validation::PlateValidationError>| {
+        match value.parse::<u16>() {
+            Ok(val) => match validator(val) {
+                Ok(_) => None,
+                Err(e) => Some(e.to_string()),
+            },
+            Err(_) if value.is_empty() => Some("This field is required".to_string()),
+            Err(_) => Some("Invalid number".to_string()),
         }
-    });
+    };
 
     view! {
-        <form on:submit=move |ev| {
-            ev.prevent_default();
-            submit_plate.dispatch(());
-        }>
+        <ActionForm action=submit_action>
             <div class="form-group">
-                <label for="bolt-spacing">Bolt Spacing (mm):</label>
+                <label for="bolt_spacing">"Bolt Spacing (mm):"</label>
                 <input
                     type="number"
-                    id="bolt-spacing"
-                    name="bolt-spacing"
-                    prop:value=bolt_spacing
-                    on:input=move |ev| set_bolt_spacing.set(event_target_value(&ev))
+                    id="bolt_spacing"
+                    name="bolt_spacing"
+                    value="60"
+                    on:input=move |ev| {
+                        let value = event_target_value(&ev);
+                        set_bolt_spacing_error.set(validate_field(&value, validation::validate_bolt_spacing));
+                    }
                     required
+                    class:error=move || bolt_spacing_error.get().is_some()
                 />
+                {move || bolt_spacing_error.get().map(|err| view! {
+                    <span class="error-message">{err}</span>
+                })}
             </div>
 
             <div class="form-group">
-                <label for="bolt-diameter">"Bolt Diameter (mm):"</label>
+                <label for="bolt_diameter">"Bolt Diameter (mm):"</label>
                 <input
                     type="number"
-                    id="bolt-diameter"
-                    name="bolt-diameter"
-                    prop:value=bolt_diameter
-                    on:input=move |ev| set_bolt_diameter.set(event_target_value(&ev))
+                    id="bolt_diameter"
+                    name="bolt_diameter"
+                    value="10"
+                    on:input=move |ev| {
+                        let value = event_target_value(&ev);
+                        set_bolt_diameter_error.set(validate_field(&value, validation::validate_bolt_diameter));
+                    }
                     required
+                    class:error=move || bolt_diameter_error.get().is_some()
                 />
+                {move || bolt_diameter_error.get().map(|err| view! {
+                    <span class="error-message">{err}</span>
+                })}
             </div>
 
             <div class="form-group">
-                <label for="bracket-height">"Bracket Height (mm):"</label>
+                <label for="bracket_height">"Bracket Height (mm):"</label>
                 <input
                     type="number"
-                    id="bracket-height"
-                    name="bracket-height"
-                    prop:value=bracket_height
-                    on:input=move |ev| set_bracket_height.set(event_target_value(&ev))
+                    id="bracket_height"
+                    name="bracket_height"
+                    value="40"
+                    on:input=move |ev| {
+                        let value = event_target_value(&ev);
+                        set_bracket_height_error.set(validate_field(&value, validation::validate_bracket_height));
+                    }
                     required
+                    class:error=move || bracket_height_error.get().is_some()
                 />
+                {move || bracket_height_error.get().map(|err| view! {
+                    <span class="error-message">{err}</span>
+                })}
             </div>
 
             <div class="form-group">
-                <label for="pin-diameter">"Pin Diameter (mm):"</label>
+                <label for="pin_diameter">"Pin Diameter (mm):"</label>
                 <input
                     type="number"
-                    id="pin-diameter"
-                    name="pin-diameter"
-                    prop:value=pin_diameter
-                    on:input=move |ev| set_pin_diameter.set(event_target_value(&ev))
+                    id="pin_diameter"
+                    name="pin_diameter"
+                    value="10"
+                    on:input=move |ev| {
+                        let value = event_target_value(&ev);
+                        set_pin_diameter_error.set(validate_field(&value, validation::validate_pin_diameter));
+                    }
                     required
+                    class:error=move || pin_diameter_error.get().is_some()
                 />
+                {move || pin_diameter_error.get().map(|err| view! {
+                    <span class="error-message">{err}</span>
+                })}
             </div>
 
             <div class="form-group">
-                <label for="plate-thickness">"Plate Thickness (mm):"</label>
+                <label for="plate_thickness">"Plate Thickness (mm):"</label>
                 <input
                     type="number"
-                    id="plate-thickness"
-                    name="plate-thickness"
-                    prop:value=plate_thickness
-                    on:input=move |ev| set_plate_thickness.set(event_target_value(&ev))
+                    id="plate_thickness"
+                    name="plate_thickness"
+                    value="8"
+                    on:input=move |ev| {
+                        let value = event_target_value(&ev);
+                        set_plate_thickness_error.set(validate_field(&value, validation::validate_plate_thickness));
+                    }
                     required
+                    class:error=move || plate_thickness_error.get().is_some()
                 />
+                {move || plate_thickness_error.get().map(|err| view! {
+                    <span class="error-message">{err}</span>
+                })}
             </div>
 
-            <button type="submit" disabled=move || is_loading.get()>
-                {move || if is_loading.get() { "Submitting..." } else { "Submit Plate" }}
+            <button
+                type="submit"
+                disabled=move || {
+                    submit_action.pending().get()
+                    || bolt_spacing_error.get().is_some()
+                    || bolt_diameter_error.get().is_some()
+                    || bracket_height_error.get().is_some()
+                    || pin_diameter_error.get().is_some()
+                    || plate_thickness_error.get().is_some()
+                }
+            >
+                {move || if submit_action.pending().get() { "Submitting..." } else { "Submit Plate" }}
             </button>
 
             {move || {
-                response_message.get().map(|msg| {
-                    view! { <div class="response-message">{msg}</div> }
+                submit_action.value().get().map(|result| {
+                    match result {
+                        Ok(msg) => view! { <div class="response-message success">{msg}</div> }.into_any(),
+                        Err(e) => view! { <div class="response-message error">{e.to_string()}</div> }.into_any(),
+                    }
                 })
             }}
-        </form>
+        </ActionForm>
     }
 }
