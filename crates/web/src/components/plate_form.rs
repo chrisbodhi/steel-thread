@@ -1,5 +1,7 @@
-use domain::{ActuatorPlate, Millimeters};
 use leptos::prelude::*;
+
+#[cfg(feature = "ssr")]
+use domain::{ActuatorPlate, Millimeters};
 
 #[server]
 pub async fn submit_plate(
@@ -35,16 +37,17 @@ pub fn PlateForm() -> impl IntoView {
     let (pin_diameter_error, set_pin_diameter_error) = signal(None::<String>);
     let (plate_thickness_error, set_plate_thickness_error) = signal(None::<String>);
 
-    let validate_field = move |value: &str, validator: fn(u16) -> Result<(), validation::PlateValidationError>| {
-        match value.parse::<u16>() {
-            Ok(val) => match validator(val) {
-                Ok(_) => None,
-                Err(e) => Some(e.to_string()),
-            },
-            Err(_) if value.is_empty() => Some("This field is required".to_string()),
-            Err(_) => Some("Invalid number".to_string()),
-        }
-    };
+    let validate_field =
+        move |value: &str, validator: fn(u16) -> Result<(), validation::PlateValidationError>| {
+            match value.parse::<u16>() {
+                Ok(val) => match validator(val) {
+                    Ok(_) => None,
+                    Err(e) => Some(e.to_string()),
+                },
+                Err(_) if value.is_empty() => Some("This field is required".to_string()),
+                Err(_) => Some("Invalid number".to_string()),
+            }
+        };
 
     view! {
         <ActionForm action=submit_action>

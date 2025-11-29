@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cargo leptos:*)",
-      "WebFetch(domain:github.com)"
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)"
     ],
     "deny": [],
     "ask": []

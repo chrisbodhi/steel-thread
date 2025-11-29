@@ -86,7 +86,7 @@ fn shell(options: LeptosOptions) -> impl IntoView {
 }
 
 #[cfg(feature = "ssr")]
-async fn create_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
+pub async fn create_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
     // Axum's Json extractor already validated the JSON structure
     // Now validate the business rules
     match validate(&payload) {
