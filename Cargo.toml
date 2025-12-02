@@ -25,4 +25,5 @@ bin-default-features = false
 bin-features = ["ssr"]
 lib-default-features = false
 lib-features = ["hydrate"]
+hash-files = true
 # working-directory = "crates/web"
