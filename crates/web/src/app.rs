@@ -13,7 +13,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/web.w_LP_Trs7UKdhdmfQydFyw.css"/>
         <Title text="Brighton Actuation Systems"/>
         <Router>
             <main>
