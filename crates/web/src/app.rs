@@ -23,7 +23,7 @@ pub fn App() -> impl IntoView {
             </main>
             <footer class="flex justify-between">
                 <div>"©" 2025 Brighton Actuation Systems</div>
-                <div>made with "🧑‍🏭" in PGH</div>
+                <div>Made with "🧑‍🏭" in PGH. AMDG.</div>
             </footer>
         </Router>
     }
