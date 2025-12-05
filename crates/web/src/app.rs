@@ -13,7 +13,7 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/web.css"/>
+        <Stylesheet id="leptos" href="/pkg/web.w_LP_Trs7UKdhdmfQydFyw.css"/>
         <Title text="Brighton Actuation Systems"/>
         <Router>
             <main>
@@ -21,10 +21,6 @@ pub fn App() -> impl IntoView {
                     <Route path=StaticSegment("") view=HomePage/>
                 </Routes>
             </main>
-            <footer class="flex justify-between">
-                <div>"©" 2025 Brighton Actuation Systems</div>
-                <div>Made with "🧑‍🏭" in PGH. AMDG.</div>
-            </footer>
         </Router>
     }
 }
@@ -47,6 +43,10 @@ fn HomePage() -> impl IntoView {
                     <ResponsePanel action=submit_action/>
                 </div>
             </div>
+            <footer class="flex justify-between">
+                <div>"©" 2025 Brighton Actuation Systems</div>
+                <div>Made with "🧑‍🏭" in PGH. AMDG.</div>
+            </footer>
         </div>
     }
 }
