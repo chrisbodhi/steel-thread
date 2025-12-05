@@ -13,7 +13,7 @@ use leptos::prelude::*;
 #[cfg(feature = "ssr")]
 use leptos_axum::{generate_route_list, LeptosRoutes};
 #[cfg(feature = "ssr")]
-use leptos_meta::MetaTags;
+use leptos_meta::{HashedStylesheet, MetaTags};
 #[cfg(feature = "ssr")]
 use serde::Serialize;
 
@@ -75,7 +75,8 @@ fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <AutoReload options=options.clone() />
-                <HydrationScripts options/>
+                <HydrationScripts options=options.clone()/>
+                <HashedStylesheet id="leptos" options=options/>
                 <MetaTags/>
             </head>
             <body>
