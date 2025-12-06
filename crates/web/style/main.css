@@ -154,7 +154,9 @@ body {
     padding: var(--spacing-lg);
     background-color: var(--color-bg-body);
     color: var(--color-text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 /* Responsive max-width for better viewport utilization */
@@ -224,7 +226,9 @@ h1 {
     color: var(--color-text-primary);
     font-size: 0.9rem;
     cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.3s ease;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.3s ease;
 }
 
 .theme-switcher select:focus {
@@ -252,7 +256,9 @@ input[type="number"] {
     box-sizing: border-box;
     background-color: var(--color-bg-input);
     color: var(--color-text-primary);
-    transition: border-color 0.2s ease, background-color 0.3s ease;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.3s ease;
 }
 
 input[type="number"]:focus {
@@ -288,7 +294,9 @@ button:disabled {
     background-color: var(--color-info-bg);
     color: var(--color-info-text);
     font-weight: 500;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 /* Three-panel responsive grid */
@@ -337,7 +345,9 @@ button:disabled {
     border: 1px solid var(--color-success-border);
     border-radius: var(--radius-sm);
     font-weight: 500;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 .error-message {
@@ -347,7 +357,9 @@ button:disabled {
     border: 1px solid var(--color-error-border);
     border-radius: var(--radius-sm);
     font-weight: 500;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 .order-section h3 {
@@ -428,5 +440,7 @@ footer {
     box-shadow: var(--shadow-panel);
     color: var(--color-text-secondary);
     font-size: 0.875rem;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }

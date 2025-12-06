@@ -39,7 +39,7 @@ fn HomePage() -> impl IntoView {
     view! {
         <div class="container">
             <div class="header">
-                <h1 class="text-red-500">Actuator Plate Configurator</h1>
+                <h1>Actuator Plate Configurator</h1>
                 <ThemeSwitcher/>
             </div>
             <div class="panel-grid">
