@@ -1,13 +1,162 @@
 @import "tailwindcss";
 
+/* ===========================
+   CSS Variables - Default Theme (Brighton)
+   =========================== */
+:root {
+    /* Colors - Primary */
+    --color-primary: #4caf50;
+    --color-primary-hover: #45a049;
+    --color-secondary: #2196f3;
+    --color-secondary-hover: #1976d2;
+    --color-accent: #ff9800;
+    --color-accent-hover: #f57c00;
+
+    /* Colors - Backgrounds */
+    --color-bg-body: #f5f5f5;
+    --color-bg-container: white;
+    --color-bg-panel: white;
+    --color-bg-input: white;
+    --color-bg-button-disabled: #ccc;
+    --color-bg-quantity-btn: #f0f0f0;
+    --color-bg-quantity-btn-hover: #e0e0e0;
+
+    /* Colors - Text */
+    --color-text-primary: #333;
+    --color-text-secondary: #555;
+    --color-text-button: white;
+    --color-text-quantity: #333;
+
+    /* Colors - Borders */
+    --color-border: #ddd;
+    --color-border-focus: #4caf50;
+    --color-border-separator: #eee;
+
+    /* Colors - Status */
+    --color-success-bg: #d4edda;
+    --color-success-text: #155724;
+    --color-success-border: #c3e6cb;
+    --color-error-bg: #f8d7da;
+    --color-error-text: #721c24;
+    --color-error-border: #f5c6cb;
+    --color-info-bg: #e3f2fd;
+    --color-info-text: #1976d2;
+
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+
+    /* Shadows */
+    --shadow-panel: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ===========================
+   Theme: Industrial
+   =========================== */
+[data-theme="industrial"] {
+    /* Colors - Primary */
+    --color-primary: #ff6f00;
+    --color-primary-hover: #e65100;
+    --color-secondary: #455a64;
+    --color-secondary-hover: #37474f;
+    --color-accent: #ffa726;
+    --color-accent-hover: #fb8c00;
+
+    /* Colors - Backgrounds */
+    --color-bg-body: #263238;
+    --color-bg-container: #37474f;
+    --color-bg-panel: #455a64;
+    --color-bg-input: #546e7a;
+    --color-bg-button-disabled: #607d8b;
+    --color-bg-quantity-btn: #546e7a;
+    --color-bg-quantity-btn-hover: #607d8b;
+
+    /* Colors - Text */
+    --color-text-primary: #eceff1;
+    --color-text-secondary: #cfd8dc;
+    --color-text-button: white;
+    --color-text-quantity: #eceff1;
+
+    /* Colors - Borders */
+    --color-border: #607d8b;
+    --color-border-focus: #ff6f00;
+    --color-border-separator: #546e7a;
+
+    /* Colors - Status */
+    --color-success-bg: #2e7d32;
+    --color-success-text: #c8e6c9;
+    --color-success-border: #388e3c;
+    --color-error-bg: #c62828;
+    --color-error-text: #ffcdd2;
+    --color-error-border: #d32f2f;
+    --color-info-bg: #1565c0;
+    --color-info-text: #bbdefb;
+}
+
+/* ===========================
+   Theme: Classic
+   =========================== */
+[data-theme="classic"] {
+    /* Colors - Primary */
+    --color-primary: #1976d2;
+    --color-primary-hover: #1565c0;
+    --color-secondary: #424242;
+    --color-secondary-hover: #303030;
+    --color-accent: #f57c00;
+    --color-accent-hover: #e65100;
+
+    /* Colors - Backgrounds */
+    --color-bg-body: #e0e0e0;
+    --color-bg-container: #fafafa;
+    --color-bg-panel: white;
+    --color-bg-input: white;
+    --color-bg-button-disabled: #bdbdbd;
+    --color-bg-quantity-btn: #eeeeee;
+    --color-bg-quantity-btn-hover: #e0e0e0;
+
+    /* Colors - Text */
+    --color-text-primary: #212121;
+    --color-text-secondary: #616161;
+    --color-text-button: white;
+    --color-text-quantity: #212121;
+
+    /* Colors - Borders */
+    --color-border: #bdbdbd;
+    --color-border-focus: #1976d2;
+    --color-border-separator: #e0e0e0;
+
+    /* Colors - Status */
+    --color-success-bg: #c8e6c9;
+    --color-success-text: #1b5e20;
+    --color-success-border: #81c784;
+    --color-error-bg: #ffcdd2;
+    --color-error-text: #b71c1c;
+    --color-error-border: #ef5350;
+    --color-info-bg: #bbdefb;
+    --color-info-text: #0d47a1;
+}
+
+/* ===========================
+   Base Styles
+   =========================== */
 body {
     font-family:
         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
         Arial, sans-serif;
     max-width: 800px;
     margin: 0 auto;
-    padding: 2rem;
-    background-color: #f5f5f5;
+    padding: var(--spacing-lg);
+    background-color: var(--color-bg-body);
+    color: var(--color-text-primary);
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 /* Responsive max-width for better viewport utilization */
@@ -30,76 +179,132 @@ body {
 }
 
 .container {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--color-bg-container);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-panel);
+    transition: background-color 0.3s ease;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 h1 {
-    margin-bottom: 2rem;
+    color: var(--color-text-primary);
+    margin: 0 0 2rem 0;
+}
+
+.theme-switcher {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.theme-switcher label {
+    margin: 0;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.theme-switcher select {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-input);
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.3s ease;
+}
+
+.theme-switcher select:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-md);
 }
 
 label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-xs);
     font-weight: 600;
-    color: #555;
+    color: var(--color-text-secondary);
 }
 
 input[type="number"] {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     font-size: 1rem;
     box-sizing: border-box;
+    background-color: var(--color-bg-input);
+    color: var(--color-text-primary);
+    transition:
+        border-color 0.2s ease,
+        background-color 0.3s ease;
 }
 
 input[type="number"]:focus {
     outline: none;
-    border-color: #4caf50;
+    border-color: var(--color-border-focus);
 }
 
 button {
-    background-color: #4caf50;
-    color: white;
+    background-color: var(--color-primary);
+    color: var(--color-text-button);
     padding: 0.75rem 2rem;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
     cursor: pointer;
     font-weight: 600;
+    transition: background-color 0.2s ease;
 }
 
 button:hover:not(:disabled) {
-    background-color: #45a049;
+    background-color: var(--color-primary-hover);
 }
 
 button:disabled {
-    background-color: #ccc;
+    background-color: var(--color-bg-button-disabled);
     cursor: not-allowed;
 }
 
 .response-message {
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 4px;
-    background-color: #e3f2fd;
-    color: #1976d2;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-info-bg);
+    color: var(--color-info-text);
     font-weight: 500;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 /* Three-panel responsive grid */
 .panel-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
 }
 
 @media (max-width: 768px) {
@@ -109,16 +314,17 @@ button:disabled {
 }
 
 .panel {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--color-bg-panel);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-panel);
+    transition: background-color 0.3s ease;
 }
 
 .panel img {
     width: 100%;
     height: auto;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
 /* Response Panel Styles */
@@ -129,55 +335,62 @@ button:disabled {
 .response-content {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--spacing-md);
 }
 
 .success-message {
-    padding: 1rem;
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
+    padding: var(--spacing-sm);
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    border: 1px solid var(--color-success-border);
+    border-radius: var(--radius-sm);
     font-weight: 500;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 .error-message {
-    padding: 1rem;
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
+    padding: var(--spacing-sm);
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-error-border);
+    border-radius: var(--radius-sm);
     font-weight: 500;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 .order-section h3 {
-    margin: 0 0 1rem 0;
-    color: #333;
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--color-text-primary);
     font-size: 1.25rem;
 }
 
 .quantity-control {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
 }
 
 .quantity-btn {
     width: 40px;
     height: 40px;
     padding: 0;
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: var(--color-bg-quantity-btn);
+    color: var(--color-text-quantity);
     font-size: 1.25rem;
     font-weight: bold;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .quantity-btn:hover:not(:disabled) {
-    background-color: #e0e0e0;
+    background-color: var(--color-bg-quantity-btn-hover);
 }
 
 .quantity-btn:disabled {
@@ -190,40 +403,44 @@ button:disabled {
     font-weight: 600;
     min-width: 3rem;
     text-align: center;
+    color: var(--color-text-primary);
 }
 
 .order-btn {
     width: 100%;
-    background-color: #2196f3;
+    background-color: var(--color-secondary);
     margin-bottom: 0;
 }
 
 .order-btn:hover:not(:disabled) {
-    background-color: #1976d2;
+    background-color: var(--color-secondary-hover);
 }
 
 .download-section {
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border-separator);
 }
 
 .download-btn {
     width: 100%;
-    background-color: #ff9800;
+    background-color: var(--color-accent);
     margin-bottom: 0;
 }
 
 .download-btn:hover:not(:disabled) {
-    background-color: #f57c00;
+    background-color: var(--color-accent-hover);
 }
 
 /* Footer Styles */
 footer {
     margin-top: 2rem;
     padding: 1.5rem 2rem;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    color: #666;
+    background-color: var(--color-bg-container);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-panel);
+    color: var(--color-text-secondary);
     font-size: 0.875rem;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
