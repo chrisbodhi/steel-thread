@@ -4,6 +4,14 @@ use domain::ActuatorPlate;
 
 // TODO: move into just-actuator-only file
 
+// TODO: make a trait that works for items besides plates
+// ---this will allow us to accept a Validator trait in other
+// crates, eg crates/parameteric
+// pub trait Validation {
+//     fn is_valid() -> Result<(), ValidationError>;
+// }
+// pub enum ValidationError {}
+
 pub fn validate(plate: &ActuatorPlate) -> Result<(), PlateValidationError> {
     validate_bolt_spacing(plate.bolt_spacing.0)?;
     validate_bolt_diameter(plate.bolt_diameter.0)?;
