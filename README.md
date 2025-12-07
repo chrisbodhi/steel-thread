@@ -31,7 +31,31 @@ This starts:
 │   └── web/          # Axum REST API server
 ├── frontend/         # React SPA (Bun, TailwindCSS, Radix UI)
 └── justfile          # Dev and build commands
-```
+This is a Rust workspace with multiple crates:
+
+- **`crates/domain`** - Core domain types and data structures
+  - `ActuatorPlate` - Main domain model
+  - `Millimeters` - Type-safe unit wrapper
+  - Shared across validation and web layers
+- **`crates/parametric`** - Interface for creating STEP files
+  - Accepts a Validation trait (TFTF -- truths from the future)
+  - Creates a STEP file of the desired object
+  - Does it also create a 3D model or rendering? Or should that happen elsewhere?
+- **`crates/validation`** - Business logic and validation rules
+  - Manufacturing constraint checks
+  - Geometric validation
+  - `no_std` compatible for WASM compilation
+  - Individual field validators for real-time client-side validation
+  - Shared validation logic across client and server
+  - Depends on domain types
+- **`crates/web`** - Web application with Axum API
+  - Server functions for type-safe client-server communication
+  - Real-time field validation using validation crate compiled to WASM
+  - Depends on domain and validation crates
+
+## Running the Project
+
+### Prerequisites
 
 ## Architecture
 
