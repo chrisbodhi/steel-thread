@@ -10,6 +10,10 @@ This is a Rust workspace with multiple crates:
   - `ActuatorPlate` - Main domain model
   - `Millimeters` - Type-safe unit wrapper
   - Shared across validation and web layers
+- **`crates/parametric`** - Interface for creating STEP files
+  - Accepts a Validation trait (TFTF -- truths from the future)
+  - Creates a STEP file of the desired object
+  - Does it also create a 3D model or rendering? Or should that happen elsewhere?
 - **`crates/validation`** - Business logic and validation rules
   - Manufacturing constraint checks
   - Geometric validation
@@ -28,7 +32,7 @@ This is a Rust workspace with multiple crates:
 
 ### Prerequisites
 
-Install cargo-leptos for building and running the SSR application:
+Install cargo-leptos for building and running the SSR application in `crates/web`:
 
 ```bash
 cargo install cargo-leptos
