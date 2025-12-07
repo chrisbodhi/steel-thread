@@ -1,0 +1,8 @@
+[package]
+name = "parametric"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+domain = { path = "../domain" }
+validation = { path = "../validation" }
