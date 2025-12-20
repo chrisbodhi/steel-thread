@@ -22,7 +22,6 @@ use validation::validate;
 
 mod app;
 mod components;
-pub mod theme;
 
 pub use app::App;
 
