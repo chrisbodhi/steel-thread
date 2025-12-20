@@ -7,21 +7,13 @@ use leptos_router::{
 
 use crate::components::plate_form::{PlateForm, SubmitPlate};
 use crate::components::response_panel::ResponsePanel;
-use crate::components::theme_switcher::ThemeSwitcher;
-use crate::theme::Theme;
 
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
 
-    // Theme state - provide context for entire app
-    let (theme, set_theme) = signal(Theme::default());
-    provide_context(theme);
-    provide_context(set_theme);
-
     view! {
         <Title text="Brighton Actuation Systems"/>
-        <Body attr:data-theme=move || theme.get().as_str()/>
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.">
@@ -38,10 +30,7 @@ fn HomePage() -> impl IntoView {
 
     view! {
         <div class="container">
-            <div class="header">
-                <h1>Actuator Plate Configurator</h1>
-                <ThemeSwitcher/>
-            </div>
+            <h1 class="text-red-500">Actuator Plate Configurator</h1>
             <div class="panel-grid">
                 <div class="panel">
                     <img src="https://i.pinimg.com/originals/35/c0/2b/35c02b534cdbacbea92ae64ee3fe0a1d.png" alt="Cat CAD" />
