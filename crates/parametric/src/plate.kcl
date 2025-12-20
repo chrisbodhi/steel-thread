@@ -1,0 +1,8 @@
+@settings(defaultLengthUnit = mm, kclVersion = 1.0)
+
+export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, pin_diameter) {
+    return startSketchOn(XY)
+      |> startProfile(at = [0, 0])
+      |> rectangle(center = [0, 0], width = 100, height = 50)
+      |> extrude(length = plate_thickness)
+}
