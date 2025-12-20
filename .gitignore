@@ -1,2 +1,4 @@
 /target
 /crates/web/dist/
+
+crates/parametric/params.kcl
