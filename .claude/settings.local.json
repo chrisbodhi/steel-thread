@@ -1,9 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cargo leptos:*)",
       "Bash(cargo build:*)",
-      "Bash(cargo test:*)"
+      "Bash(cargo test:*)",
+      "Bash(find:*)",
+      "Bash(fd:*)",
+      "Bash(cargo doc:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

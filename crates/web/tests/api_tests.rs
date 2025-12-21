@@ -1,22 +1,18 @@
 use axum::{
     body::Body,
     http::{Request, StatusCode},
-    routing::{get, post},
-    Router,
 };
 use domain::{ActuatorPlate, Millimeters};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
-async fn create_test_router() -> Router {
-    Router::new()
-        .route("/api/health", get(|| async { StatusCode::OK }))
-        .route("/api/plate", post(web::create_plate))
+fn create_test_router() -> axum::Router {
+    web::create_router()
 }
 
 #[tokio::test]
 async fn test_health_endpoint() {
-    let app = create_test_router().await;
+    let app = create_test_router();
 
     let response = app
         .oneshot(
@@ -33,7 +29,7 @@ async fn test_health_endpoint() {
 
 #[tokio::test]
 async fn test_create_plate_valid() {
-    let app = create_test_router().await;
+    let app = create_test_router();
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(60),
@@ -60,11 +56,12 @@ async fn test_create_plate_valid() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["got_it"], true);
+    assert_eq!(json["success"], true);
 }
 
 #[tokio::test]
 async fn test_create_plate_invalid_bolt_spacing() {
-    let app = create_test_router().await;
+    let app = create_test_router();
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(0), // Invalid!
@@ -91,11 +88,13 @@ async fn test_create_plate_invalid_bolt_spacing() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["got_it"], false);
+    assert_eq!(json["success"], false);
+    assert!(json["errors"].as_array().unwrap().len() > 0);
 }
 
 #[tokio::test]
 async fn test_create_plate_invalid_json() {
-    let app = create_test_router().await;
+    let app = create_test_router();
 
     let response = app
         .oneshot(
@@ -115,7 +114,7 @@ async fn test_create_plate_invalid_json() {
 
 #[tokio::test]
 async fn test_create_plate_all_fields_invalid() {
-    let app = create_test_router().await;
+    let app = create_test_router();
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(0),
@@ -138,4 +137,9 @@ async fn test_create_plate_all_fields_invalid() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["success"], false);
+    assert!(json["errors"].as_array().unwrap().len() > 0);
 }
