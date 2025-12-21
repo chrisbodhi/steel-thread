@@ -2,6 +2,12 @@
 
 An actuator plate configurator exploring web → parametric CAD → quote pipelines.
 
+## Prerequisites
+
+- [Rust](https://rustup.rs/) (latest stable)
+- [Bun](https://bun.sh/) (JavaScript runtime)
+- [Just](https://github.com/casey/just) (command runner) - install via `cargo install just` or `brew install just`
+
 ## Quick Start
 
 ```bash
