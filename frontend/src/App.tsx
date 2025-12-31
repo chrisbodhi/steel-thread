@@ -10,6 +10,7 @@ import { Input } from "./components/ui/input";
 import { ThemePicker } from "./components/ui/theme-picker";
 
 import "./index.css";
+import { APITester } from "./APITester";
 
 export function App() {
   return (
@@ -41,6 +42,7 @@ export function App() {
             </form>
           </div>
         </CardContent>
+        <APITester />
         <CardFooter>Made in PGH. 2025. AMDG.</CardFooter>
       </Card>
     </div>

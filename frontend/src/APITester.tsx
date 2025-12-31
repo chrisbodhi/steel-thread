@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useRef, type FormEvent } from "react";
 
@@ -17,7 +23,17 @@ export function APITester() {
       const endpoint = formData.get("endpoint") as string;
       const url = new URL(endpoint, location.href);
       const method = formData.get("method") as string;
-      const res = await fetch(url, { method });
+      const body = JSON.stringify({
+        bolt_spacing: 10,
+        bolt_diameter: 10,
+        bracket_height: 10,
+        pin_diameter: 10,
+        plate_thickness: 10,
+      });
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      const res = await fetch(url, { method, body, headers });
 
       const data = await res.json();
       responseInputRef.current!.value = JSON.stringify(data, null, 2);
@@ -38,13 +54,19 @@ export function APITester() {
           </SelectTrigger>
           <SelectContent align="start">
             <SelectItem value="GET">GET</SelectItem>
-            <SelectItem value="PUT">PUT</SelectItem>
+            <SelectItem value="POST">POST</SelectItem>
           </SelectContent>
         </Select>
         <Label htmlFor="endpoint" className="sr-only">
           Endpoint
         </Label>
-        <Input id="endpoint" type="text" name="endpoint" defaultValue="/api/hello" placeholder="/api/hello" />
+        <Input
+          id="endpoint"
+          type="text"
+          name="endpoint"
+          defaultValue="/api/plate"
+          placeholder="/api/plate"
+        />
         <Button type="submit" variant="secondary">
           Send
         </Button>
