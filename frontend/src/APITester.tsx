@@ -48,7 +48,7 @@ export function APITester() {
         <Label htmlFor="method" className="sr-only">
           Method
         </Label>
-        <Select name="method" defaultValue="GET">
+        <Select name="method" defaultValue="POST">
           <SelectTrigger className="w-[100px]" id="method">
             <SelectValue placeholder="Method" />
           </SelectTrigger>

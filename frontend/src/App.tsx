@@ -7,10 +7,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
 import { ThemePicker } from "./components/ui/theme-picker";
 
-import "./index.css";
 import { APITester } from "./APITester";
+
+import "./index.css";
+
+function Combined({ forProp, name }: { forProp: string; name: string }) {
+  return (
+    <div>
+      <Label htmlFor={forProp}>{name}</Label>
+      <Input
+        id={forProp}
+        type="number"
+        name={forProp}
+        defaultValue="10"
+        placeholder="10"
+      />
+    </div>
+  );
+}
 
 export function App() {
   return (
@@ -36,9 +53,20 @@ export function App() {
           </div>
           <div>
             <form>
-              <Input type="text" placeholder="Enter your name" />
-              <Input type="email" placeholder="Enter your email" />
-              <Input type="number" placeholder="Enter your phone number" />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gridTemplateRows: "repeat(3, auto)",
+                  gap: "1rem",
+                }}
+              >
+                <Combined forProp="boltSpacing" name="Bolt Spacing" />
+                <Combined forProp="boltDiameter" name="Bolt Diameter" />
+                <Combined forProp="bracketHeight" name="Bracket Height" />
+                <Combined forProp="pinDiameter" name="Pin Diameter" />
+                <Combined forProp="plateThickness" name="Plate Thickness" />
+              </div>
             </form>
           </div>
         </CardContent>
