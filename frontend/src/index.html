@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+        <title>Brighton Actuation Systems</title>
+        <script>
+            // Prevent flash of incorrect theme
+            (function() {
+                var colorScheme = localStorage.getItem('theme-color-scheme') || 'neutral';
+                var mode = localStorage.getItem('theme-mode') || 'system';
+                var isDark = mode === 'dark' ||
+                    (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+                document.documentElement.dataset.theme = colorScheme;
+                if (isDark) document.documentElement.classList.add('dark');
+            })();
+        </script>
+        <script type="module" src="./frontend.tsx" async></script>
+    </head>
+    <body>
+        <div id="root"></div>
+    </body>
+</html>

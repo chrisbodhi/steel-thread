@@ -1,4 +1,3 @@
-#[cfg(feature = "ssr")]
 use axum::{
     extract::Json,
     http::StatusCode,
@@ -6,107 +5,77 @@ use axum::{
     routing::{get, post},
     Router,
 };
-#[cfg(feature = "ssr")]
 use domain::ActuatorPlate;
-#[cfg(feature = "ssr")]
-use leptos::prelude::*;
-#[cfg(feature = "ssr")]
-use leptos_axum::{generate_route_list, LeptosRoutes};
-#[cfg(feature = "ssr")]
-use leptos_meta::MetaTags;
-#[cfg(feature = "ssr")]
 use serde::Serialize;
-
-#[cfg(feature = "ssr")]
+use std::net::SocketAddr;
+use tower_http::services::{ServeDir, ServeFile};
 use validation::validate;
 
-mod app;
-mod components;
-
-pub use app::App;
-
-#[cfg(feature = "hydrate")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn hydrate() {
-    console_error_panic_hook::set_once();
-    leptos::mount::hydrate_body(App);
-}
-
-#[cfg(feature = "ssr")]
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    // Build Leptos configuration
-    let conf = get_configuration(None)?;
-    let addr = conf.leptos_options.site_addr;
-    let leptos_options = conf.leptos_options;
+    let app = create_router();
 
-    // Generate routes for Leptos
-    let routes = generate_route_list(app::App);
-
-    let router = Router::new()
-        // API routes
-        .route("/api/health", get(|| async { StatusCode::OK }))
-        .route("/api/plate", post(create_plate))
-        // Leptos SSR routes
-        .leptos_routes(&leptos_options, routes, {
-            let leptos_options = leptos_options.clone();
-            move || shell(leptos_options.clone())
-        })
-        // Serve static assets and handle errors
-        .fallback(leptos_axum::file_and_error_handler(shell))
-        .with_state(leptos_options);
-
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3030));
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
-    tracing::debug!("listening on {}", listener.local_addr()?);
+    tracing::info!("listening on {}", listener.local_addr()?);
 
-    axum::serve(listener, router).await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
 
-#[cfg(feature = "ssr")]
-fn shell(options: LeptosOptions) -> impl IntoView {
-    view! {
-        <!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta charset="utf-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1"/>
-                <AutoReload options=options.clone() />
-                <HydrationScripts options/>
-                <MetaTags/>
-            </head>
-            <body>
-                <app::App/>
-            </body>
-        </html>
-    }
+pub fn create_router() -> Router {
+    // Serve static files from dist/, fallback to index.html for SPA routing
+    let serve_dir = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
+
+    Router::new()
+        .route("/api/health", get(health))
+        .route("/api/plate", post(create_plate))
+        .fallback_service(serve_dir)
 }
 
-#[cfg(feature = "ssr")]
+async fn health() -> impl IntoResponse {
+    let res = OkResponse { ok: true };
+    (StatusCode::OK, Json(res)).into_response()
+}
+
 pub async fn create_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
-    // Axum's Json extractor already validated the JSON structure
-    // Now validate the business rules
     match validate(&payload) {
         Ok(_) => {
-            let res = Res {
-                got_it: payload.bolt_diameter.0 > 0,
+            let res = SuccessResponse {
+                success: true,
+                got_it: true,
             };
-            (StatusCode::CREATED, Json(res))
+            (StatusCode::CREATED, Json(res)).into_response()
         }
         Err(e) => {
             tracing::error!("validation error: {}", e);
-            eprintln!("{}!", e);
-            let res = Res { got_it: false };
-            (StatusCode::BAD_REQUEST, Json(res))
+            let res = ErrorResponse {
+                success: false,
+                got_it: false,
+                errors: vec![e.to_string()],
+            };
+            (StatusCode::BAD_REQUEST, Json(res)).into_response()
         }
     }
 }
 
-#[cfg(feature = "ssr")]
 #[derive(Serialize)]
-struct Res {
+struct OkResponse {
+    ok: bool,
+}
+
+#[derive(Serialize)]
+struct SuccessResponse {
+    success: bool,
     got_it: bool,
+}
+
+#[derive(Serialize)]
+struct ErrorResponse {
+    success: bool,
+    got_it: bool,
+    errors: Vec<String>,
 }

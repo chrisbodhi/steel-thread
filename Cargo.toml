@@ -5,24 +5,3 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 version = "0.0.1"
-
-[[workspace.metadata.leptos]]
-name = "web"
-bin-package = "web"
-lib-package = "web"
-ssr-features = ["ssr"]
-client-features = ["hydrate"]
-site-root = "target/site"
-site-pkg-dir = "pkg"
-# style-file = "crates/web/style/main.css"
-# assets-dir = "public"
-tailwind-input-file = "crates/web/style/main.css"
-site-addr = "0.0.0.0:3030"
-reload-port = 3031
-browserquery = "defaults"
-bin-exe-name = "web"
-bin-default-features = false
-bin-features = ["ssr"]
-lib-default-features = false
-lib-features = ["hydrate"]
-# working-directory = "crates/web"

@@ -2,112 +2,118 @@
 
 An actuator plate configurator exploring web → parametric CAD → quote pipelines.
 
+## Prerequisites
+
+- [Rust](https://rustup.rs/) (latest stable)
+- [Bun](https://bun.sh/) (JavaScript runtime)
+- [Just](https://github.com/casey/just) (command runner) - install via `cargo install just` or `brew install just`
+
+## Quick Start
+
+```bash
+# Install frontend dependencies
+cd frontend && bun install && cd ..
+
+# Start development servers
+just dev
+```
+
+This starts:
+- **API**: http://localhost:3030 (Rust/Axum)
+- **Frontend**: http://localhost:3000 (Bun/React with HMR)
+
 ## Project Structure
 
-This is a Rust workspace with multiple crates:
-
-- **`crates/domain`** - Core domain types and data structures
-  - `ActuatorPlate` - Main domain model
-  - `Millimeters` - Type-safe unit wrapper
-  - Shared across validation and web layers
-- **`crates/validation`** - Business logic and validation rules
-  - Manufacturing constraint checks
-  - Geometric validation
-  - `no_std` compatible for WASM compilation
-  - Individual field validators for real-time client-side validation
-  - Shared validation logic across client and server
-  - Depends on domain types
-- **`crates/web`** - Web application with Leptos SSR and Axum API
-  - Leptos SSR frontend with reactive form validation
-  - Server functions for type-safe client-server communication
-  - Real-time field validation using validation crate compiled to WASM
-  - Server-side rendering with client-side hydration
-  - Depends on domain and validation crates
-
-## Running the Project
-
-### Prerequisites
-
-Install cargo-leptos for building and running the SSR application:
-
-```bash
-cargo install cargo-leptos
+```
+├── crates/
+│   ├── domain/       # Core types (ActuatorPlate, Millimeters)
+│   ├── validation/   # Business logic (no_std, field validators)
+│   └── web/          # Axum REST API server
+├── frontend/         # React SPA (Bun, TailwindCSS, Radix UI)
+└── justfile          # Dev and build commands
 ```
 
-### Run the web application:
+## Architecture
 
-```bash
-# Run in development mode with hot reload
-cargo leptos watch
+**Development**: Two servers - Bun (frontend with HMR) + Rust (API)
 
-# Or build and run for production
-cargo leptos build --release
-cargo leptos serve --release
+**Production**: One server - Rust serves API + static frontend
+
+```
+┌─────────────────────────────────────────┐
+│            Production Server            │
+│                                         │
+│   /api/*  →  Axum handlers              │
+│   /*      →  Static files (React SPA)   │
+│                                         │
+└─────────────────────────────────────────┘
 ```
 
-The server will start on `http://localhost:3030`
+## Development Commands
 
-### Features
+### Just (Project Orchestration)
 
-- **Reactive Form Validation** - Real-time field validation as users type
-- **Server Functions** - Type-safe RPC between client and server using `#[server]` macro
-- **Progressive Enhancement** - Form works with and without JavaScript
-- **Shared Validation Logic** - Same validation code runs on both client (WASM) and server
-- **SSR with Hydration** - Fast initial page load with server-side rendering
-
-### API Endpoints
-
-- `GET /api/health` - Health check endpoint
-- Server functions automatically registered by Leptos (e.g., `submit_plate`)
-
-## Development
-
-### Build everything
 ```bash
-cargo build
+just dev            # Start both servers for development
+just dev-frontend   # Start only frontend dev server
+just build-release  # Build frontend + Rust for production
+just test           # Run all tests once
+just clean          # Clean build artifacts
+just                # List all available commands
 ```
 
-### Build the web crate
-```bash
-# Server-side only (faster for testing server code)
-cargo build -p web --features ssr
+### Bacon (Interactive Rust Development)
 
-# Full SSR build (server + WASM client)
-cargo leptos build
+```bash
+bacon run-long   # Run API with auto-restart on file changes
+bacon test       # Run tests with auto-rerun on changes
+bacon clippy     # Run linting with auto-rerun on changes
+bacon check      # Run type checking with auto-rerun
 ```
 
-Note: The validation crate is automatically compiled to WASM for client-side validation
+### Workflow Patterns
 
-### Run tests
+**Full-stack development:**
 ```bash
-# Run all tests (18 tests across validation + API)
-cargo test
-
-# Run tests for specific crate
-cargo test -p validation
-cargo test -p web --features ssr
+just dev
 ```
 
-See [TESTING.md](./TESTING.md) for detailed testing documentation.
-
-### With `bacon`
-
-Install with
-
+**Backend-focused development (two terminals):**
 ```bash
-cargo install --locked bacon --features "clipboard sound"
-```
-
-#### Run the web endpoint
-
-```bash
+# Terminal 1
 bacon run-long
+
+# Terminal 2
+cd frontend && bun dev
 ```
 
-## Project Documentation
+**Frontend-only:**
+```bash
+just dev-frontend
+# or
+cd frontend && bun dev
+```
 
-- [TESTING.md](./TESTING.md) - Comprehensive testing guide (18 tests: validation + API)
-- [CLAUDE.md](./CLAUDE.md) - AI assistant development guide (architecture, patterns, versions)
-- [PLAN.md](./PLAN.md) - User flow outline and feature checklist
-- [LEARNING.md](./LEARNING.md) - Success criteria and technical questions
-- [Steel Thread for BAS](file://Users/b/Library/Mobile%20Documents/iCloud~md~obsidian/Documents/Algorithms/Steelthread%20for%20BAS.md) - Full context (Obsidian)
+**Quick test run:**
+```bash
+just test
+```
+
+**Test-driven development:**
+```bash
+bacon test
+```
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check |
+| POST | `/api/plate` | Validate plate configuration |
+
+## Documentation
+
+- [CLAUDE.md](./CLAUDE.md) - Development guide (architecture, patterns, workflows)
+- [TESTING.md](./TESTING.md) - Testing documentation
+- [PLAN.md](./PLAN.md) - Feature roadmap
+- [LEARNING.md](./LEARNING.md) - Technical exploration notes
