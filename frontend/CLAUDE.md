@@ -1,106 +1,152 @@
+# Frontend Development Guide
 
-Default to using Bun instead of Node.js.
+This document provides Bun-specific guidance for working on the frontend.
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Use `bunx <package> <command>` instead of `npx <package> <command>`
-- Bun automatically loads .env, so don't use dotenv.
+## Project Context
 
-## APIs
+This frontend is a **React SPA built with Bun**, served in two modes:
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+- **Development**: Bun dev server with HMR on http://localhost:3000 (proxies API to Rust backend)
+- **Production**: Static files served by Rust backend at http://localhost:3030
+
+**Backend is Rust (Axum), not Bun.** The Bun server is only used for development with hot module reloading.
+
+## Bun Conventions
+
+Use Bun instead of Node.js:
+
+```bash
+bun <file>                    # instead of node <file>
+bun test                      # instead of jest/vitest
+bun install                   # instead of npm/yarn/pnpm install
+bun run <script>              # instead of npm run <script>
+bunx <package>                # instead of npx <package>
+```
+
+Bun automatically loads `.env` files - no need for `dotenv`.
+
+## Development Server
+
+Our custom Bun dev server (`src/index.ts`) provides:
+- Hot module reloading for React components
+- API proxy: `/api/*` → `http://localhost:3030` (Rust backend)
+- Static file serving in development
+
+Start it with:
+```bash
+bun dev
+```
+
+## Frontend Tech Stack
+
+- **React 19** - UI framework
+- **TailwindCSS 4** - Styling  
+- **shadcn/ui** - Component library (new-york style)
+- **Lucide React** - Icons
+
+## Adding UI Components
+
+Use shadcn/ui for all components:
+
+```bash
+cd frontend
+bunx shadcn@latest add <component-name>
+```
+
+This installs components to `src/components/ui/` as source code you own and can customize.
+
+## HTML Imports Pattern
+
+Our `index.html` imports React directly:
+
+```html
+<script type="module" src="./frontend.tsx"></script>
+```
+
+Bun's bundler automatically:
+- Transpiles TypeScript/JSX
+- Bundles dependencies
+- Processes CSS imports (including Tailwind)
+- Provides HMR in development
+
+## Calling the Backend API
+
+The frontend makes requests to `/api/*` which:
+- In development: Proxied to `http://localhost:3030` by Bun dev server
+- In production: Handled by Rust server (same origin)
+
+Example:
+```tsx
+const response = await fetch('/api/plate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    bolt_spacing: 60,
+    bolt_diameter: 10,
+    bracket_height: 40,
+    pin_diameter: 10,
+    plate_thickness: 8,
+  }),
+});
+const data = await response.json();
+```
+
+## Build for Production
+
+```bash
+bun run build
+```
+
+This runs `build.ts` which outputs static files to `../crates/web/dist/` for the Rust server to serve.
 
 ## Testing
 
-Use `bun test` to run tests.
+Use `bun test` to run tests:
 
-```ts#index.test.ts
+```ts
 import { test, expect } from "bun:test";
 
-test("hello world", () => {
+test("example test", () => {
   expect(1).toBe(1);
 });
 ```
 
-## Frontend
+## File Structure
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
-
-Server:
-
-```ts#index.ts
-import index from "./index.html"
-
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
+```
+src/
+├── index.ts          # Bun dev server with API proxy
+├── index.html        # HTML entry point
+├── frontend.tsx      # React app root
+├── App.tsx           # Main app component
+├── components/ui/    # shadcn/ui components
+└── lib/utils.ts      # Utility functions
 ```
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+## Important Notes
 
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
+- **Don't use Bun APIs for backend work** - We use Rust (Axum) for the API server
+- **Don't use `Bun.serve()` routes** - Our dev server uses a simple Express-like setup
+- **Don't install Radix packages directly** - Use `bunx shadcn@latest add` instead
+- **Build before testing production** - Run `just build` to update static assets
+
+## Environment Variables
+
+- `API_URL` - Backend API URL in development (default: `http://localhost:3030`)
+
+## Full-Stack Development
+
+Start both servers:
+```bash
+# From project root
+just dev
 ```
 
-With the following `frontend.tsx`:
+Or in separate terminals:
+```bash
+# Terminal 1: Rust API with auto-reload
+bacon run-long
 
-```tsx#frontend.tsx
-import React from "react";
-import { createRoot } from "react-dom/client";
-
-// import .css files directly and it works
-import './index.css';
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
+# Terminal 2: Frontend with HMR
+cd frontend && bun dev
 ```
-
-Then, run index.ts
-
-```sh
-bun --hot ./index.ts
-```
-
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
