@@ -68,22 +68,35 @@ This runs:
 
 The Bun dev server proxies `/api/*` requests to the Rust backend.
 
-### Alternative: Two Terminals
+### Development Tools
 
+**Just** - Project orchestration and build pipeline
 ```bash
-# Terminal 1: Rust API (with bacon for auto-reload)
-bacon run-long
-
-# Terminal 2: Bun frontend
-cd frontend && bun dev
+just dev            # Start both API and frontend servers
+just dev-frontend   # Start only the frontend dev server
+just build-release  # Build frontend + Rust for production
+just test           # Run all tests once
+just clean          # Clean build artifacts
 ```
 
-### Using bacon
+**Bacon** - Interactive Rust development with file watching
+```bash
+bacon run-long   # Run API with auto-restart on changes
+bacon test       # Run tests with auto-rerun on changes
+bacon clippy     # Run clippy with auto-rerun on changes
+bacon check      # Run type checking with auto-rerun
+```
+
+### Two-Terminal Workflow
+
+For active backend development with frontend running:
 
 ```bash
-bacon run-long    # Run API with auto-restart on changes
-bacon test        # Run tests with auto-rerun
-bacon clippy      # Run clippy with auto-rerun
+# Terminal 1: Rust API with auto-reload
+bacon run-long
+
+# Terminal 2: Bun frontend with HMR
+cd frontend && bun dev
 ```
 
 ## Build & Deploy

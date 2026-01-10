@@ -49,13 +49,59 @@ This starts:
 └─────────────────────────────────────────┘
 ```
 
-## Commands
+## Development Commands
+
+### Just (Project Orchestration)
 
 ```bash
 just dev            # Start both servers for development
+just dev-frontend   # Start only frontend dev server
 just build-release  # Build frontend + Rust for production
-just test           # Run all tests
+just test           # Run all tests once
+just clean          # Clean build artifacts
 just                # List all available commands
+```
+
+### Bacon (Interactive Rust Development)
+
+```bash
+bacon run-long   # Run API with auto-restart on file changes
+bacon test       # Run tests with auto-rerun on changes
+bacon clippy     # Run linting with auto-rerun on changes
+bacon check      # Run type checking with auto-rerun
+```
+
+### Workflow Patterns
+
+**Full-stack development:**
+```bash
+just dev
+```
+
+**Backend-focused development (two terminals):**
+```bash
+# Terminal 1
+bacon run-long
+
+# Terminal 2
+cd frontend && bun dev
+```
+
+**Frontend-only:**
+```bash
+just dev-frontend
+# or
+cd frontend && bun dev
+```
+
+**Quick test run:**
+```bash
+just test
+```
+
+**Test-driven development:**
+```bash
+bacon test
 ```
 
 ## API Endpoints
@@ -64,30 +110,6 @@ just                # List all available commands
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
 | POST | `/api/plate` | Validate plate configuration |
-
-## Development
-
-### Using bacon (Rust file watcher)
-
-```bash
-bacon run-long   # API with auto-restart
-bacon test       # Tests with auto-rerun
-bacon clippy     # Linting with auto-rerun
-```
-
-### Frontend only
-
-```bash
-cd frontend && bun dev
-```
-
-### Running tests
-
-```bash
-cargo test                    # All tests (18 total)
-cargo test -p validation      # Validation tests (13)
-cargo test -p web             # API tests (5)
-```
 
 ## Documentation
 

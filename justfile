@@ -9,14 +9,6 @@ dev:
     cd frontend && bun dev &
     wait
 
-# Run just the Rust API server
-dev-api:
-    cargo run -p web
-
-# Run just the Rust API server with bacon
-dev-api-watch:
-    bacon run-long
-
 # Run just the Bun frontend dev server
 dev-frontend:
     cd frontend && bun dev
