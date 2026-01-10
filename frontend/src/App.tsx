@@ -71,7 +71,7 @@ export function App() {
           </div>
         </CardContent>
         <APITester />
-        <CardFooter>Made in PGH. 2025. AMDG.</CardFooter>
+        <CardFooter>Made in PGH. {new Date().getFullYear()}. AMDG.</CardFooter>
       </Card>
     </div>
   );
