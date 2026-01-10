@@ -1,4 +1,3 @@
 /target
-/crates/web/dist/
-
+frontend/node_modules/
 crates/parametric/params.kcl
