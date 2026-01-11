@@ -2,3 +2,4 @@
 frontend/node_modules/
 crates/parametric/src/params.kcl
 *.step
+.DS_Store

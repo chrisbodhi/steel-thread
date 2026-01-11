@@ -77,8 +77,8 @@ impl ActuatorPlate {
         ActuatorPlate {
             bolt_spacing: Millimeters(60),
             bolt_diameter: Millimeters(10),
-            bracket_height: Millimeters(40),
-            bracket_width: Millimeters(30),
+            bracket_height: Millimeters(400),
+            bracket_width: Millimeters(300),
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
