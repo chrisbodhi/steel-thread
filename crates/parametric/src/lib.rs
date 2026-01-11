@@ -32,11 +32,13 @@ fn generate_params_file(plate: &ActuatorPlate) -> std::io::Result<()> {
          export const boltDiameter = {:?}\n\
          export const boltSpacing = {:?}\n\
          export const bracketHeight = {:?}\n\
+         export const bracketWidth = {:?}\n\
          export const pinDiameter = {:?}",
         plate.plate_thickness,
         plate.bolt_diameter,
         plate.bolt_spacing,
         plate.bracket_height,
+        plate.bracket_width,
         plate.pin_diameter
     );
     std::fs::write("params.kcl", content)?;

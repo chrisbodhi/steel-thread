@@ -35,6 +35,7 @@ async fn test_create_plate_valid() {
         bolt_spacing: Millimeters(60),
         bolt_diameter: Millimeters(10),
         bracket_height: Millimeters(40),
+        bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),
         plate_thickness: Millimeters(8),
     };
@@ -67,6 +68,7 @@ async fn test_create_plate_invalid_bolt_spacing() {
         bolt_spacing: Millimeters(0), // Invalid!
         bolt_diameter: Millimeters(10),
         bracket_height: Millimeters(40),
+        bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),
         plate_thickness: Millimeters(8),
     };
@@ -120,6 +122,7 @@ async fn test_create_plate_all_fields_invalid() {
         bolt_spacing: Millimeters(0),
         bolt_diameter: Millimeters(0),
         bracket_height: Millimeters(0),
+        bracket_width: Millimeters(0),
         pin_diameter: Millimeters(0),
         plate_thickness: Millimeters(0),
     };

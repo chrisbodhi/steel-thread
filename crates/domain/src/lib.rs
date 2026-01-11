@@ -29,6 +29,11 @@ pub struct ActuatorPlate {
     /// Vertical dimension of the bracket that holds the actuator.
     pub bracket_height: Millimeters,
 
+    /// Width of the mounting bracket (in millimeters).
+    ///
+    /// Horizontal dimension of the bracket that holds the actuator.
+    pub bracket_width: Millimeters,
+
     /// Diameter of actuator pivot pins (in millimeters).
     ///
     /// Separate from mounting bolts. These pins are used for the actuator
@@ -46,6 +51,7 @@ impl ActuatorPlate {
         bolt_spacing: Millimeters,
         bolt_diameter: Millimeters,
         bracket_height: Millimeters,
+        bracket_width: Millimeters,
         pin_diameter: Millimeters,
         plate_thickness: Millimeters,
     ) -> Self {
@@ -53,6 +59,7 @@ impl ActuatorPlate {
             bolt_spacing,
             bolt_diameter,
             bracket_height,
+            bracket_width,
             pin_diameter,
             plate_thickness,
         }
@@ -63,6 +70,7 @@ impl ActuatorPlate {
             bolt_spacing: Millimeters(60),
             bolt_diameter: Millimeters(10),
             bracket_height: Millimeters(40),
+            bracket_width: Millimeters(30),
             pin_diameter: Millimeters(10),
             plate_thickness: Millimeters(8),
         }

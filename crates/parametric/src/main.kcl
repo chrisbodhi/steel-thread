@@ -1,6 +1,6 @@
-import plateThickness, boltDiameter, boltSpacing, bracketHeight, pinDiameter from "params.kcl"
+import plateThickness, boltDiameter, boltSpacing, bracketHeight, bracketWidth, pinDiameter from "params.kcl"
 import plate from "plate.kcl"
 
 @settings(defaultLengthUnit = mm, kclVersion = 1.0)
 
-plate(plate_thickness = plateThickness, bolt_diameter = boltDiameter, bolt_spacing = boltSpacing, bracket_height = bracketHeight, pin_diameter = pinDiameter)
+plate(plate_thickness = plateThickness, bolt_diameter = boltDiameter, bolt_spacing = boltSpacing, bracket_height = bracketHeight, bracket_width = bracketWidth, pin_diameter = pinDiameter)

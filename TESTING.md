@@ -7,7 +7,9 @@ This project has comprehensive test coverage across multiple layers.
 ```
 crates/
 ├── validation/
-│   └── src/lib.rs              # Unit tests for validation logic (13 tests)
+│   └── src/lib.rs              # Unit tests for validation logic (15 tests)
+├── parametric/
+│   └── src/lib.rs              # Parametric generation tests (1 test)
 └── web/
     └── tests/
         └── api_tests.rs        # Integration tests for REST API (5 tests)
@@ -37,13 +39,15 @@ RUST_BACKTRACE=1 cargo test
 
 ### 1. Validation Logic Tests (`crates/validation/src/lib.rs`)
 
-**Individual Field Validators** (10 tests):
+**Individual Field Validators** (12 tests):
 - `test_validate_bolt_spacing_valid` - Valid values (60, 1, u16::MAX)
 - `test_validate_bolt_spacing_invalid` - Zero value rejection
 - `test_validate_bolt_diameter_valid` - Valid diameter
 - `test_validate_bolt_diameter_invalid` - Zero diameter rejection
 - `test_validate_bracket_height_valid` - Valid height
 - `test_validate_bracket_height_invalid` - Zero height rejection
+- `test_validate_bracket_width_valid` - Valid width
+- `test_validate_bracket_width_invalid` - Zero width rejection
 - `test_validate_pin_diameter_valid` - Valid pin diameter
 - `test_validate_pin_diameter_invalid` - Zero pin diameter rejection
 - `test_validate_plate_thickness_valid` - Valid thickness
@@ -56,7 +60,12 @@ RUST_BACKTRACE=1 cargo test
 **Error Messages** (1 test):
 - `test_error_display_messages` - Verify all error messages are correct
 
-### 2. REST API Integration Tests (`crates/web/tests/api_tests.rs`)
+### 2. Parametric Tests (`crates/parametric/src/lib.rs`)
+
+**Generation Tests** (1 test):
+- `it_fails_when_it_should` - Validates that invalid plates fail generation
+
+### 3. REST API Integration Tests (`crates/web/tests/api_tests.rs`)
 
 **Endpoint Tests** (5 tests):
 - `test_health_endpoint` - GET /api/health returns 200 OK

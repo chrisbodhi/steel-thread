@@ -27,6 +27,7 @@ export function APITester() {
         bolt_spacing: 10,
         bolt_diameter: 10,
         bracket_height: 10,
+        bracket_width: 10,
         pin_diameter: 10,
         plate_thickness: 10,
       });

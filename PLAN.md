@@ -16,9 +16,10 @@ This branch (`remove-ssr`) replaced the server-side rendered UI with a React SPA
 - [ ] Wire up form controls (sliders) for plate parameters:
   - [ ] `bolt_spacing` in mm (default: 60, min: 10, max: 200)
   - [ ] `bolt_diameter` in mm (default: 10, min: 3, max: 20)
+  - [ ] `bracket_height` in mm (default: 40, min: 10, max: 100)
+  - [ ] `bracket_width` in mm (default: 30, min: 10, max: 100)
   - [ ] `pin_diameter` in mm (default: 10, min: 5, max: 30)
   - [ ] `plate_thickness` in mm (default: 8, min: 2, max: 20)
-  - [ ] `bracket_height` in mm (default: 40, min: 10, max: 100)
 - [ ] Connect form to `/api/plate` endpoint
 - [ ] Display validation errors from API
 - [ ] Real-time validation feedback (consider WASM client-side validation)
