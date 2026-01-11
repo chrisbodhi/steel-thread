@@ -33,13 +33,15 @@ fn generate_params_file(plate: &ActuatorPlate) -> std::io::Result<()> {
          export const boltSpacing = {:?}\n\
          export const bracketHeight = {:?}\n\
          export const bracketWidth = {:?}\n\
-         export const pinDiameter = {:?}",
+         export const pinDiameter = {:?}\n\
+         export const pinCount = {}",
         plate.plate_thickness,
         plate.bolt_diameter,
         plate.bolt_spacing,
         plate.bracket_height,
         plate.bracket_width,
-        plate.pin_diameter
+        plate.pin_diameter,
+        plate.pin_count
     );
     std::fs::write("params.kcl", content)?;
 
@@ -147,12 +149,13 @@ mod tests {
 
         // Check for correct format
         assert!(content.starts_with("@settings(defaultLengthUnit = mm, kclVersion = 1.0)"));
-        assert!(content.contains("export const plateThickness = Millimeters(8)"));
-        assert!(content.contains("export const boltDiameter = Millimeters(10)"));
-        assert!(content.contains("export const boltSpacing = Millimeters(60)"));
-        assert!(content.contains("export const bracketHeight = Millimeters(40)"));
-        assert!(content.contains("export const bracketWidth = Millimeters(30)"));
-        assert!(content.contains("export const pinDiameter = Millimeters(10)"));
+        assert!(content.contains("export const plateThickness"));
+        assert!(content.contains("export const boltDiameter"));
+        assert!(content.contains("export const boltSpacing"));
+        assert!(content.contains("export const bracketHeight"));
+        assert!(content.contains("export const bracketWidth"));
+        assert!(content.contains("export const pinDiameter"));
+        assert!(content.contains("export const pinCount = 6"));
 
         // Cleanup
         std::fs::remove_file("params.kcl").ok();

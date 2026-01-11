@@ -40,6 +40,12 @@ pub struct ActuatorPlate {
     /// mechanism's pivot points and articulation.
     pub pin_diameter: Millimeters,
 
+    /// Number of actuator pins.
+    ///
+    /// Count of pivot pins required for the actuator mechanism.
+    /// Must be between 1 and 12 inclusive.
+    pub pin_count: u16,
+
     /// Thickness of the base plate material (in millimeters).
     ///
     /// Determines the structural rigidity and extrusion depth of the plate.
@@ -53,6 +59,7 @@ impl ActuatorPlate {
         bracket_height: Millimeters,
         bracket_width: Millimeters,
         pin_diameter: Millimeters,
+        pin_count: u16,
         plate_thickness: Millimeters,
     ) -> Self {
         ActuatorPlate {
@@ -61,6 +68,7 @@ impl ActuatorPlate {
             bracket_height,
             bracket_width,
             pin_diameter,
+            pin_count,
             plate_thickness,
         }
     }
@@ -72,6 +80,7 @@ impl ActuatorPlate {
             bracket_height: Millimeters(40),
             bracket_width: Millimeters(30),
             pin_diameter: Millimeters(10),
+            pin_count: 6,
             plate_thickness: Millimeters(8),
         }
     }
