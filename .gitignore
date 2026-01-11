@@ -1,3 +1,4 @@
 /target
 frontend/node_modules/
 crates/parametric/params.kcl
+*.step
