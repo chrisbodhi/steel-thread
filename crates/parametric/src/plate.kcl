@@ -1,8 +1,49 @@
 @settings(defaultLengthUnit = mm, kclVersion = 1.0)
 
-export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, bracket_width, pin_diameter) {
+// √ Need pins added in a circle in the center for aesthetics
+// √ Need bolts added in the corners for looking sane
+// ?? Need chamfer because aesthetics
+
+// TODO: figure out how to make a cup for Prim!
+
+export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, bracket_width, pin_diameter, pin_count) {
+    centerCircles = startSketchOn(XZ)
+        |> circle(radius = pin_diameter / 2, center = [50, 0])
+        |> patternCircular2d(
+            center = [0, 0],
+            instances = pin_count,
+            arcDegrees = 360,
+        )
+
+    upperBoltCircles = startSketchOn(XZ)
+        |> circle(radius = bolt_diameter / 2, center = [bracket_width/2 * -0.9, bracket_height/2 * -0.9])
+        |> patternLinear2d(
+            instances = 2,
+            distance = bracket_width * 0.9,
+            axis = [1, 0]
+        )
+
+    lowerBoltCircles = startSketchOn(XZ)
+        |> circle(radius = bolt_diameter / 2, center = [bracket_width/2 * -0.9, bracket_height/2 * 0.9])
+        |> patternLinear2d(
+            instances = 2,
+            distance = bracket_width * 0.9,
+            axis = [1, 0]
+        )
+
+    fn createRect() {
     return startSketchOn(XY)
-      |> startProfile(at = [0, 0])
-      |> rectangle(center = [0, 0], width = 100, height = 50)
-      |> extrude(length = plate_thickness)
+            |> startProfile(at = [-bracket_width/2, -bracket_height/2])
+            |> line(end = [bracket_width, 0])
+            |> line(end = [0, bracket_height])
+            |> line(end = [-bracket_width, 0])
+            |> close()
+    }
+
+    return startSketchOn(XZ)
+        |> createRect()
+        |> subtract2d(tool = centerCircles)
+        |> subtract2d(tool = upperBoltCircles)
+        |> subtract2d(tool = lowerBoltCircles)
+        |> extrude(length = plate_thickness)
 }
