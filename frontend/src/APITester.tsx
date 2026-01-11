@@ -24,18 +24,45 @@ export function APITester() {
       const url = new URL(endpoint, location.href);
       const method = formData.get("method") as string;
       const body = JSON.stringify({
-        bolt_spacing: 10,
+        bolt_spacing: 60,
         bolt_diameter: 10,
-        bracket_height: 10,
-        bracket_width: 10,
+        bracket_height: 400,
+        bracket_width: 300,
         pin_diameter: 10,
         pin_count: 6,
-        plate_thickness: 10,
+        plate_thickness: 8,
       });
       const headers = {
         "Content-Type": "application/json",
       };
       const res = await fetch(url, { method, body, headers });
+
+      const data = await res.json();
+      responseInputRef.current!.value = JSON.stringify(data, null, 2);
+    } catch (error) {
+      responseInputRef.current!.value = String(error);
+    }
+  };
+
+  const generateModel = async () => {
+    try {
+      const body = JSON.stringify({
+        bolt_spacing: 60,
+        bolt_diameter: 10,
+        bracket_height: 400,
+        bracket_width: 300,
+        pin_diameter: 10,
+        pin_count: 6,
+        plate_thickness: 8,
+      });
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        body,
+        headers,
+      });
 
       const data = await res.json();
       responseInputRef.current!.value = JSON.stringify(data, null, 2);
@@ -71,6 +98,9 @@ export function APITester() {
         />
         <Button type="submit" variant="secondary">
           Send
+        </Button>
+        <Button type="button" onClick={generateModel} variant="default">
+          Generate Model
         </Button>
       </form>
       <Label htmlFor="response" className="sr-only">

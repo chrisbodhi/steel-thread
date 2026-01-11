@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 axum = { version = "0.8", features = ["json"] }
 domain = { path = "../domain" }
+parametric = { path = "../parametric" }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.42", features = ["full"] }
 tower = "0.5"
