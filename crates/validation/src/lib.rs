@@ -4,11 +4,21 @@ use domain::ActuatorPlate;
 
 // TODO: move into just-actuator-only file
 
+// TODO: make a trait that works for items besides plates
+// ---this will allow us to accept a Validator trait in other
+// crates, eg crates/parameteric
+// pub trait Validation {
+//     fn is_valid() -> Result<(), ValidationError>;
+// }
+// pub enum ValidationError {}
+
 pub fn validate(plate: &ActuatorPlate) -> Result<(), PlateValidationError> {
     validate_bolt_spacing(plate.bolt_spacing.0)?;
     validate_bolt_diameter(plate.bolt_diameter.0)?;
     validate_bracket_height(plate.bracket_height.0)?;
+    validate_bracket_width(plate.bracket_width.0)?;
     validate_pin_diameter(plate.pin_diameter.0)?;
+    validate_pin_count(plate.pin_count)?;
     validate_plate_thickness(plate.plate_thickness.0)?;
     Ok(())
 }
@@ -34,9 +44,26 @@ pub fn validate_bracket_height(value: u16) -> Result<(), PlateValidationError> {
     Ok(())
 }
 
+pub fn validate_bracket_width(value: u16) -> Result<(), PlateValidationError> {
+    if value == 0 {
+        return Err(PlateValidationError::BracketWidthInvalid);
+    }
+    Ok(())
+}
+
 pub fn validate_pin_diameter(value: u16) -> Result<(), PlateValidationError> {
     if value == 0 {
         return Err(PlateValidationError::PinDiameterInvalid);
+    }
+    Ok(())
+}
+
+pub fn validate_pin_count(value: u16) -> Result<(), PlateValidationError> {
+    if value == 0 {
+        return Err(PlateValidationError::PinCountTooSmall);
+    }
+    if value > 12 {
+        return Err(PlateValidationError::PinCountTooLarge);
     }
     Ok(())
 }
@@ -53,7 +80,10 @@ pub enum PlateValidationError {
     BoltSpacingTooSmall,
     BoltDiameterInvalid,
     BracketHeightInvalid,
+    BracketWidthInvalid,
     PinDiameterInvalid,
+    PinCountTooSmall,
+    PinCountTooLarge,
     PlateThicknessInvalid,
 }
 
@@ -63,7 +93,10 @@ impl core::fmt::Display for PlateValidationError {
             Self::BoltSpacingTooSmall => write!(f, "bolt spacing must be greater than 0"),
             Self::BoltDiameterInvalid => write!(f, "bolt diameter must be greater than 0"),
             Self::BracketHeightInvalid => write!(f, "bracket height must be greater than 0"),
+            Self::BracketWidthInvalid => write!(f, "bracket width must be greater than 0"),
             Self::PinDiameterInvalid => write!(f, "pin diameter must be greater than 0"),
+            Self::PinCountTooSmall => write!(f, "pin count must be at least 1"),
+            Self::PinCountTooLarge => write!(f, "pin count must not exceed 12"),
             Self::PlateThicknessInvalid => write!(f, "plate thickness must be greater than 0"),
         }
     }
@@ -127,6 +160,21 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_bracket_width_valid() {
+        assert!(validate_bracket_width(30).is_ok());
+    }
+
+    #[test]
+    fn test_validate_bracket_width_invalid() {
+        let result = validate_bracket_width(0);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            PlateValidationError::BracketWidthInvalid
+        ));
+    }
+
+    #[test]
     fn test_validate_pin_diameter_valid() {
         assert!(validate_pin_diameter(10).is_ok());
     }
@@ -138,6 +186,33 @@ mod tests {
         assert!(matches!(
             result.unwrap_err(),
             PlateValidationError::PinDiameterInvalid
+        ));
+    }
+
+    #[test]
+    fn test_validate_pin_count_valid() {
+        assert!(validate_pin_count(1).is_ok());
+        assert!(validate_pin_count(6).is_ok());
+        assert!(validate_pin_count(12).is_ok());
+    }
+
+    #[test]
+    fn test_validate_pin_count_too_small() {
+        let result = validate_pin_count(0);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            PlateValidationError::PinCountTooSmall
+        ));
+    }
+
+    #[test]
+    fn test_validate_pin_count_too_large() {
+        let result = validate_pin_count(13);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            PlateValidationError::PinCountTooLarge
         ));
     }
 
@@ -162,7 +237,9 @@ mod tests {
             bolt_spacing: Millimeters(60),
             bolt_diameter: Millimeters(10),
             bracket_height: Millimeters(40),
+            bracket_width: Millimeters(30),
             pin_diameter: Millimeters(10),
+            pin_count: 6,
             plate_thickness: Millimeters(8),
         };
         assert!(validate(&plate).is_ok());
@@ -174,7 +251,9 @@ mod tests {
             bolt_spacing: Millimeters(0),
             bolt_diameter: Millimeters(10),
             bracket_height: Millimeters(40),
+            bracket_width: Millimeters(30),
             pin_diameter: Millimeters(10),
+            pin_count: 6,
             plate_thickness: Millimeters(8),
         };
         let result = validate(&plate);
@@ -200,8 +279,20 @@ mod tests {
             "bracket height must be greater than 0"
         );
         assert_eq!(
+            PlateValidationError::BracketWidthInvalid.to_string(),
+            "bracket width must be greater than 0"
+        );
+        assert_eq!(
             PlateValidationError::PinDiameterInvalid.to_string(),
             "pin diameter must be greater than 0"
+        );
+        assert_eq!(
+            PlateValidationError::PinCountTooSmall.to_string(),
+            "pin count must be at least 1"
+        );
+        assert_eq!(
+            PlateValidationError::PinCountTooLarge.to_string(),
+            "pin count must not exceed 12"
         );
         assert_eq!(
             PlateValidationError::PlateThicknessInvalid.to_string(),

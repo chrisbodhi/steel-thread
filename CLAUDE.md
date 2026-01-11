@@ -138,6 +138,7 @@ Request:
   "bolt_spacing": 60,
   "bolt_diameter": 10,
   "bracket_height": 40,
+  "bracket_width": 30,
   "pin_diameter": 10,
   "plate_thickness": 8
 }
@@ -190,6 +191,7 @@ const response = await fetch('/api/plate', {
     bolt_spacing: 60,
     bolt_diameter: 10,
     bracket_height: 40,
+    bracket_width: 30,
     pin_diameter: 10,
     plate_thickness: 8,
   }),
@@ -206,6 +208,7 @@ The validation crate provides:
    - `validate_bolt_spacing(value: u16)`
    - `validate_bolt_diameter(value: u16)`
    - `validate_bracket_height(value: u16)`
+   - `validate_bracket_width(value: u16)`
    - `validate_pin_diameter(value: u16)`
    - `validate_plate_thickness(value: u16)`
 
@@ -213,15 +216,21 @@ All validators return `Result<(), PlateValidationError>`.
 
 ## Testing
 
-**Current test count: 18 tests**
-- 13 validation unit tests
+**Current test count: 24 fast tests + 1 ignored integration test**
+- 15 validation unit tests
+- 4 parametric unit tests
+- 1 parametric integration test (ignored - requires zoo CLI)
 - 5 REST API integration tests
 
 ```bash
-just test                  # All tests
-cargo test -p validation   # Validation only
-cargo test -p web          # API tests only
+just test                           # All fast tests (default)
+cargo test -p validation            # Validation only
+cargo test -p parametric            # Parametric tests (skips zoo CLI test)
+cargo test -p parametric -- --ignored  # Run zoo CLI integration test
+cargo test -p web                   # API tests only
 ```
+
+See [TESTING.md](./TESTING.md) for detailed testing guide.
 
 ## Important Guidelines
 

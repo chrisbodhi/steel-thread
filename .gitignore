@@ -1,2 +1,7 @@
 /target
-/crates/web/dist/
+frontend/node_modules/
+crates/parametric/src/params.kcl
+.DS_Store
+
+*.step
+*.gltf

@@ -7,24 +7,35 @@ This project has comprehensive test coverage across multiple layers.
 ```
 crates/
 ├── validation/
-│   └── src/lib.rs              # Unit tests for validation logic (13 tests)
+│   └── src/lib.rs              # Unit tests for validation logic (15 tests)
+├── parametric/
+│   └── src/lib.rs              # Parametric generation tests (4 fast + 1 ignored)
 └── web/
     └── tests/
         └── api_tests.rs        # Integration tests for REST API (5 tests)
 ```
 
+**Total: 24 fast tests + 1 ignored integration test**
+
 ## Running Tests
 
 ```bash
-# Run all tests
+# Run all fast tests (default - skips ignored tests)
 cargo test
 
 # Run tests for a specific crate
-cargo test -p validation
-cargo test -p web --features ssr
+cargo test -p validation      # Validation only (15 tests)
+cargo test -p parametric      # Parametric tests (4 fast tests, skips zoo CLI test)
+cargo test -p web             # API tests only (5 tests)
 
-# Run specific test
+# Run specific test by name
 cargo test test_validate_bolt_spacing_valid
+
+# Run ignored integration tests (requires external dependencies)
+cargo test -- --ignored
+
+# Run ALL tests including ignored ones
+cargo test -- --include-ignored
 
 # Run with output
 cargo test -- --nocapture
@@ -33,17 +44,38 @@ cargo test -- --nocapture
 RUST_BACKTRACE=1 cargo test
 ```
 
+### Running Specific Test Suites
+
+```bash
+# Run only validation tests
+cargo test -p validation
+
+# Run only parametric tests (skips zoo CLI integration test)
+cargo test -p parametric
+
+# Run parametric tests including the zoo CLI integration test
+cargo test -p parametric -- --include-ignored
+
+# Run only ignored tests (requires zoo CLI installed)
+cargo test -p parametric -- --ignored
+
+# Run only API tests
+cargo test -p web
+```
+
 ## Test Coverage
 
 ### 1. Validation Logic Tests (`crates/validation/src/lib.rs`)
 
-**Individual Field Validators** (10 tests):
+**Individual Field Validators** (12 tests):
 - `test_validate_bolt_spacing_valid` - Valid values (60, 1, u16::MAX)
 - `test_validate_bolt_spacing_invalid` - Zero value rejection
 - `test_validate_bolt_diameter_valid` - Valid diameter
 - `test_validate_bolt_diameter_invalid` - Zero diameter rejection
 - `test_validate_bracket_height_valid` - Valid height
 - `test_validate_bracket_height_invalid` - Zero height rejection
+- `test_validate_bracket_width_valid` - Valid width
+- `test_validate_bracket_width_invalid` - Zero width rejection
 - `test_validate_pin_diameter_valid` - Valid pin diameter
 - `test_validate_pin_diameter_invalid` - Zero pin diameter rejection
 - `test_validate_plate_thickness_valid` - Valid thickness
@@ -56,7 +88,25 @@ RUST_BACKTRACE=1 cargo test
 **Error Messages** (1 test):
 - `test_error_display_messages` - Verify all error messages are correct
 
-### 2. REST API Integration Tests (`crates/web/tests/api_tests.rs`)
+### 2. Parametric Tests (`crates/parametric/src/lib.rs`)
+
+**Unit Tests** (4 tests):
+- `test_generate_step_fails_with_invalid_plate` - Invalid plates fail validation
+- `test_generate_model_succeeds_with_valid_plate` - Valid plates generate params file
+- `test_generate_model_fails_with_invalid_plate` - Invalid plates return proper error
+- `test_generate_params_file_creates_valid_kcl` - Generated KCL file has correct format and values
+
+**Integration Tests** (1 ignored test):
+- `test_generate_step_creates_file_with_zoo_cli` - Requires `zoo` CLI to be installed (marked `#[ignore]`)
+
+The integration test is ignored by default because it requires:
+1. The `zoo` CLI tool installed
+2. `main.kcl` file to exist
+3. `output_dir` directory to exist
+
+Run with: `cargo test -p parametric -- --include-ignored`
+
+### 3. REST API Integration Tests (`crates/web/tests/api_tests.rs`)
 
 **Endpoint Tests** (5 tests):
 - `test_health_endpoint` - GET /api/health returns 200 OK
@@ -185,12 +235,15 @@ serde_json = "1.0"
 ## Best Practices
 
 1. **Test both success and failure cases** - Every validator has valid/invalid tests
-2. **Use descriptive test names** - Clear what's being tested
+2. **Use descriptive test names** - Clear what's being tested (e.g., `test_validate_bolt_spacing_valid`)
 3. **Test error messages** - Ensure user-facing messages are correct
 4. **Test edge cases** - Min/max values, empty inputs, etc.
 5. **Keep tests fast** - Unit tests run in <1ms, integration tests in <10ms
 6. **Test in isolation** - Each test creates its own router/data
 7. **Use assertions that show helpful errors** - `assert_eq!` over `assert!`
+8. **Mark external dependency tests with `#[ignore]`** - Tests requiring external tools (CLI, databases) should be ignored by default
+9. **Clean up after yourself** - Tests that create files should remove them (use `.ok()` to ignore cleanup errors)
+10. **Avoid silent failures** - Always check `Result` types explicitly with `assert!` or `unwrap()`
 
 ## Continuous Testing
 
@@ -220,5 +273,64 @@ cargo tarpaulin --workspace --out Html
 
 Current estimated coverage:
 - **Validation crate**: ~100% (all functions tested)
+- **Parametric crate**: ~90% (all functions tested except external CLI integration)
 - **Web crate**: ~40% (API endpoints tested, components not tested)
 - **Domain crate**: 0% (simple types, no logic to test)
+
+## Common Testing Anti-Patterns to Avoid
+
+### ❌ Silent Failures
+```rust
+// BAD - test passes even if generate_step returns Err!
+#[test]
+fn bad_test() {
+    if let Ok(status) = generate_step(plate) {
+        assert!(status.success())
+    }
+}
+
+// GOOD - explicitly check the result
+#[test]
+fn good_test() {
+    let result = generate_step(plate);
+    assert!(result.is_ok());
+    assert!(result.unwrap().success());
+}
+```
+
+### ❌ Tests That Don't Clean Up
+```rust
+// BAD - leaves files behind
+#[test]
+fn bad_test() {
+    generate_params_file(&plate).unwrap();
+    assert!(std::path::Path::new("params.kcl").exists());
+    // params.kcl left behind!
+}
+
+// GOOD - cleans up after test
+#[test]
+fn good_test() {
+    generate_params_file(&plate).unwrap();
+    assert!(std::path::Path::new("params.kcl").exists());
+    std::fs::remove_file("params.kcl").ok(); // cleanup
+}
+```
+
+### ❌ External Dependencies Without #[ignore]
+```rust
+// BAD - breaks CI if CLI not installed
+#[test]
+fn bad_test() {
+    let result = Command::new("zoo").status();
+    assert!(result.is_ok());
+}
+
+// GOOD - marked as optional integration test
+#[test]
+#[ignore]
+fn good_test() {
+    let result = Command::new("zoo").status();
+    assert!(result.is_ok());
+}
+```

@@ -25,13 +25,16 @@ This starts:
 ## Project Structure
 
 ```
-├── crates/
+├── crates/           # Rust workspace (see crates/README.md)
 │   ├── domain/       # Core types (ActuatorPlate, Millimeters)
 │   ├── validation/   # Business logic (no_std, field validators)
-│   └── web/          # Axum REST API server
-├── frontend/         # React SPA (Bun, TailwindCSS, Radix UI)
+│   ├── web/          # Axum REST API server
+│   └── parametric/   # KCL parametric CAD definitions
+├── frontend/         # React SPA (Bun, TailwindCSS, shadcn/ui)
 └── justfile          # Dev and build commands
 ```
+
+See [crates/README.md](./crates/README.md) for detailed crate documentation.
 
 ## Architecture
 
@@ -114,6 +117,8 @@ bacon test
 ## Documentation
 
 - [CLAUDE.md](./CLAUDE.md) - Development guide (architecture, patterns, workflows)
+- [crates/README.md](./crates/README.md) - Rust crates documentation
+- [frontend/README.md](./frontend/README.md) - Frontend documentation
 - [TESTING.md](./TESTING.md) - Testing documentation
 - [PLAN.md](./PLAN.md) - Feature roadmap
 - [LEARNING.md](./LEARNING.md) - Technical exploration notes
