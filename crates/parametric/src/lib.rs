@@ -59,6 +59,18 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<(), AllErrors> {
         return Err(AllErrors::GeneratorError);
     }
 
+    // Generate STEP file
+    if let Err(e) = generate_step(plate.clone()) {
+        eprintln!("oops generating STEP: {:?}", e);
+        return Err(AllErrors::GeneratorError);
+    }
+
+    // Generate glTF file
+    if let Err(e) = generate_gltf(plate.clone()) {
+        eprintln!("oops generating glTF: {:?}", e);
+        return Err(AllErrors::GeneratorError);
+    }
+
     Ok(())
 }
 
@@ -73,7 +85,32 @@ pub fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError
             "kcl",
             "export",
             "--output-format=step",
-            "src/main.kcl", // TODO: finish plate.kcl imported into main.kcl
+            "src/main.kcl",
+            "output_dir",
+        ])
+        .status();
+
+    match status {
+        Ok(stat) => Ok(stat),
+        Err(e) => {
+            eprintln!("ouch: {}", e);
+            return Err(ValidationError::NoStep);
+        }
+    }
+}
+
+pub fn generate_gltf(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
+    if let Err(e) = validation::validate(&plate) {
+        eprintln!("oops: {}", e);
+        return Err(ValidationError::NoStep);
+    }
+
+    let status = std::process::Command::new("zoo")
+        .args(&[
+            "kcl",
+            "export",
+            "--output-format=gltf",
+            "src/main.kcl",
             "output_dir",
         ])
         .status();
@@ -105,25 +142,21 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_generate_model_succeeds_with_valid_plate() {
         let plate = ActuatorPlate::default();
 
+        // This test requires zoo CLI to be installed and authenticated
+        // It will generate params.kcl, STEP, and glTF files
         let result = generate_model(&plate);
 
-        // Should succeed in generating params file
+        // Should succeed in generating all files
         assert!(result.is_ok());
 
-        // Verify params.kcl was created
-        let params_content =
-            std::fs::read_to_string("params.kcl").expect("params.kcl should be created");
-
-        // Verify it contains expected values
-        assert!(params_content.contains("export const plateThickness"));
-        assert!(params_content.contains("export const boltDiameter"));
-        assert!(params_content.contains("export const bracketWidth"));
-
-        // Cleanup
+        // Cleanup (params.kcl may have been consumed by zoo)
         std::fs::remove_file("params.kcl").ok();
+        std::fs::remove_file("output_dir/output.step").ok();
+        std::fs::remove_file("output_dir/output.gltf").ok();
     }
 
     #[test]
@@ -161,6 +194,17 @@ mod tests {
         std::fs::remove_file("params.kcl").ok();
     }
 
+    #[test]
+    fn test_generate_gltf_fails_with_invalid_plate() {
+        let mut plate = ActuatorPlate::default();
+        plate.bolt_diameter = Millimeters(0);
+
+        let result = generate_gltf(plate);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), ValidationError::NoStep);
+    }
+
     // This test requires the `zoo` CLI to be installed and for the user to be authenticated; it is ignored by default
     #[test]
     #[ignore]
@@ -188,5 +232,34 @@ mod tests {
         // Cleanup
         std::fs::remove_file("params.kcl").ok();
         std::fs::remove_file("output_dir/output.step").ok();
+    }
+
+    // This test requires the `zoo` CLI to be installed and for the user to be authenticated; it is ignored by default
+    #[test]
+    #[ignore]
+    fn test_generate_gltf_creates_file_with_zoo_cli() {
+        let plate = ActuatorPlate::default();
+
+        // This will only pass if, as pre-requisites:
+        // 1. zoo CLI is installed
+        // 2. user is authenticated against zoo
+        // 3. main.kcl exists
+        // 4. output_dir exists
+        let result = generate_gltf(plate);
+
+        match result {
+            Ok(status) => {
+                // Check if command succeeded
+                assert!(status.success(), "zoo command should succeed");
+            }
+            Err(e) => {
+                // If zoo is not installed, the test should be skipped
+                panic!("Failed to run zoo command: {:?}. Is zoo CLI installed? Is the user authenticated?", e);
+            }
+        }
+
+        // Cleanup
+        std::fs::remove_file("params.kcl").ok();
+        std::fs::remove_file("output_dir/output.gltf").ok();
     }
 }
