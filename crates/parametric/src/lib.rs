@@ -74,7 +74,7 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<(), AllErrors> {
     Ok(())
 }
 
-pub fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
+fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
     if let Err(e) = validation::validate(&plate) {
         eprintln!("oops: {}", e);
         return Err(ValidationError::NoStep);
@@ -99,7 +99,7 @@ pub fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError
     }
 }
 
-pub fn generate_gltf(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
+fn generate_gltf(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
     if let Err(e) = validation::validate(&plate) {
         eprintln!("oops: {}", e);
         return Err(ValidationError::NoStep);
