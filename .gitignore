@@ -5,3 +5,4 @@ crates/parametric/src/params.kcl
 
 *.step
 *.gltf
+crates/web/dist

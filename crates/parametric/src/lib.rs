@@ -54,6 +54,12 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<(), AllErrors> {
         return Err(AllErrors::ValidationError);
     }
 
+    // Create output directory if it doesn't exist
+    if let Err(e) = std::fs::create_dir_all("output_dir") {
+        eprintln!("Failed to create output directory: {}", e);
+        return Err(AllErrors::GeneratorError);
+    }
+
     if let Err(e) = generate_params_file(&plate) {
         eprintln!("oops on that param: {}", e);
         return Err(AllErrors::GeneratorError);
@@ -80,12 +86,20 @@ fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
         return Err(ValidationError::NoStep);
     }
 
+    // Try crates/parametric/src/main.kcl first (when running from project root),
+    // then fall back to src/main.kcl (when running from crates/parametric)
+    let kcl_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
+        "crates/parametric/src/main.kcl"
+    } else {
+        "src/main.kcl"
+    };
+
     let status = std::process::Command::new("zoo")
         .args(&[
             "kcl",
             "export",
             "--output-format=step",
-            "src/main.kcl",
+            kcl_path,
             "output_dir",
         ])
         .status();
@@ -105,12 +119,20 @@ fn generate_gltf(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
         return Err(ValidationError::NoStep);
     }
 
+    // Try crates/parametric/src/main.kcl first (when running from project root),
+    // then fall back to src/main.kcl (when running from crates/parametric)
+    let kcl_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
+        "crates/parametric/src/main.kcl"
+    } else {
+        "src/main.kcl"
+    };
+
     let status = std::process::Command::new("zoo")
         .args(&[
             "kcl",
             "export",
             "--output-format=gltf",
-            "src/main.kcl",
+            kcl_path,
             "output_dir",
         ])
         .status();
