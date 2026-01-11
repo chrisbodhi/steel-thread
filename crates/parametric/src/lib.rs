@@ -66,17 +66,17 @@ pub fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError
         return Err(ValidationError::NoStep);
     }
 
-    let a = std::process::Command::new("zoo")
+    let status = std::process::Command::new("zoo")
         .args(&[
             "kcl",
             "export",
             "--output-format=step",
-            "main.kcl", // TODO: create this main.kcl
+            "src/main.kcl", // TODO: finish plate.kcl imported into main.kcl
             "output_dir",
         ])
         .status();
 
-    match a {
+    match status {
         Ok(stat) => Ok(stat),
         Err(e) => {
             eprintln!("ouch: {}", e);
@@ -92,10 +92,98 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_fails_when_it_should() {
+    fn test_generate_step_fails_with_invalid_plate() {
         let mut plate = ActuatorPlate::default();
         plate.bolt_diameter = Millimeters(0);
-        let err = Err(ValidationError::NoStep);
-        assert_eq!(err, generate_step(plate))
+
+        let result = generate_step(plate);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), ValidationError::NoStep);
+    }
+
+    #[test]
+    fn test_generate_model_succeeds_with_valid_plate() {
+        let plate = ActuatorPlate::default();
+
+        let result = generate_model(&plate);
+
+        // Should succeed in generating params file
+        assert!(result.is_ok());
+
+        // Verify params.kcl was created
+        let params_content =
+            std::fs::read_to_string("params.kcl").expect("params.kcl should be created");
+
+        // Verify it contains expected values
+        assert!(params_content.contains("export const plateThickness"));
+        assert!(params_content.contains("export const boltDiameter"));
+        assert!(params_content.contains("export const bracketWidth"));
+
+        // Cleanup
+        std::fs::remove_file("params.kcl").ok();
+    }
+
+    #[test]
+    fn test_generate_model_fails_with_invalid_plate() {
+        let mut plate = ActuatorPlate::default();
+        plate.bolt_spacing = Millimeters(0);
+
+        let result = generate_model(&plate);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), AllErrors::ValidationError);
+    }
+
+    #[test]
+    fn test_generate_params_file_creates_valid_kcl() {
+        let plate = ActuatorPlate::default();
+
+        let result = generate_params_file(&plate);
+        assert!(result.is_ok());
+
+        // Read and verify the file content
+        let content = std::fs::read_to_string("params.kcl").unwrap();
+
+        // Check for correct format
+        assert!(content.starts_with("@settings(defaultLengthUnit = mm, kclVersion = 1.0)"));
+        assert!(content.contains("export const plateThickness = Millimeters(8)"));
+        assert!(content.contains("export const boltDiameter = Millimeters(10)"));
+        assert!(content.contains("export const boltSpacing = Millimeters(60)"));
+        assert!(content.contains("export const bracketHeight = Millimeters(40)"));
+        assert!(content.contains("export const bracketWidth = Millimeters(30)"));
+        assert!(content.contains("export const pinDiameter = Millimeters(10)"));
+
+        // Cleanup
+        std::fs::remove_file("params.kcl").ok();
+    }
+
+    // This test requires the `zoo` CLI to be installed and for the user to be authenticated; it is ignored by default
+    #[test]
+    #[ignore]
+    fn test_generate_step_creates_file_with_zoo_cli() {
+        let plate = ActuatorPlate::default();
+
+        // This will only pass if, as pre-requisites:
+        // 1. zoo CLI is installed
+        // 2. user is authenticated against zoo
+        // 3. main.kcl exists
+        // 4. output_dir exists
+        let result = generate_step(plate);
+
+        match result {
+            Ok(status) => {
+                // Check if command succeeded
+                assert!(status.success(), "zoo command should succeed");
+            }
+            Err(e) => {
+                // If zoo is not installed, the test should be skipped
+                panic!("Failed to run zoo command: {:?}. Is zoo CLI installed? Is the user authenticated?", e);
+            }
+        }
+
+        // Cleanup
+        std::fs::remove_file("params.kcl").ok();
+        std::fs::remove_file("output_dir/output.step").ok();
     }
 }
