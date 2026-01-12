@@ -30,6 +30,7 @@ declare global {
           "shadow-intensity"?: string;
           ar?: boolean;
           loading?: "auto" | "lazy" | "eager";
+          poster?: string;
         },
         HTMLElement
       >;
@@ -192,7 +193,7 @@ export function App() {
                     </Button>
                   </div>
 
-                  <div className="w-full h-96 bg-gray-100 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-800">
+                  <div className="w-full h-96 bg-gray-100 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-800 flex items-center justify-center">
                     <model-viewer
                       src="/api/download/gltf"
                       alt="Generated actuator plate model"
@@ -200,7 +201,26 @@ export function App() {
                       camera-controls
                       shadow-intensity="1"
                       style={{ width: "100%", height: "100%" }}
-                    />
+                    >
+                      <div
+                        slot="progress-bar"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "100%",
+                          flexDirection: "column",
+                          gap: "1rem",
+                        }}
+                      >
+                        <div className="text-gray-600 dark:text-gray-400 text-lg">
+                          Loading 3D model...
+                        </div>
+                        <div className="w-48 h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 animate-pulse" style={{ width: "60%" }}></div>
+                        </div>
+                      </div>
+                    </model-viewer>
                   </div>
                 </div>
               )}
