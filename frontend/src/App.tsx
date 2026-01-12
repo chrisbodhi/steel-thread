@@ -15,6 +15,27 @@ import { APITester } from "./APITester";
 
 import "./index.css";
 import React, { useState, type FormEvent } from "react";
+import "@google/model-viewer";
+
+// Declare model-viewer as a custom element for TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "model-viewer": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & {
+          src?: string;
+          alt?: string;
+          "auto-rotate"?: boolean;
+          "camera-controls"?: boolean;
+          "shadow-intensity"?: string;
+          ar?: boolean;
+          loading?: "auto" | "lazy" | "eager";
+        },
+        HTMLElement
+      >;
+    }
+  }
+}
 
 function Combined({
   forProp,
@@ -159,15 +180,28 @@ export function App() {
               </Button>
 
               {downloadUrl && (
-                <div className="p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
-                  <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-                    Model generated successfully!
-                  </p>
-                  <Button asChild className="w-full">
-                    <a href={downloadUrl} download>
-                      Download STEP File
-                    </a>
-                  </Button>
+                <div className="flex flex-col gap-4">
+                  <div className="p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-800 dark:text-green-200 mb-2">
+                      Model generated successfully!
+                    </p>
+                    <Button asChild className="w-full">
+                      <a href={downloadUrl} download>
+                        Download STEP File
+                      </a>
+                    </Button>
+                  </div>
+
+                  <div className="w-full h-96 bg-gray-100 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-800">
+                    <model-viewer
+                      src="/api/download/gltf"
+                      alt="Generated actuator plate model"
+                      auto-rotate
+                      camera-controls
+                      shadow-intensity="1"
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </div>
                 </div>
               )}
 

@@ -36,6 +36,7 @@ pub fn create_router() -> Router {
         .route("/api/plate", post(create_plate))
         .route("/api/generate", post(generate_plate_model))
         .route("/api/download/step", get(download_step))
+        .route("/api/download/gltf", get(download_gltf))
         .fallback_service(serve_dir)
 }
 
@@ -115,6 +116,32 @@ async fn download_step() -> impl IntoResponse {
                 success: false,
                 got_it: false,
                 errors: vec!["STEP file not found. Please generate the model first.".to_string()],
+            };
+            (StatusCode::NOT_FOUND, Json(res)).into_response()
+        }
+    }
+}
+
+async fn download_gltf() -> impl IntoResponse {
+    let file_path = "output_dir/output.gltf";
+
+    match tokio::fs::read(file_path).await {
+        Ok(contents) => {
+            let headers = [
+                (header::CONTENT_TYPE, "model/gltf+json"),
+                (
+                    header::CONTENT_DISPOSITION,
+                    "inline; filename=\"actuator_plate.gltf\"",
+                ),
+            ];
+            (StatusCode::OK, headers, contents).into_response()
+        }
+        Err(e) => {
+            tracing::error!("Failed to read glTF file: {}", e);
+            let res = ErrorResponse {
+                success: false,
+                got_it: false,
+                errors: vec!["glTF file not found. Please generate the model first.".to_string()],
             };
             (StatusCode::NOT_FOUND, Json(res)).into_response()
         }
