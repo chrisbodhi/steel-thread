@@ -108,12 +108,10 @@ Run with: `cargo test -p parametric -- --include-ignored`
 
 ### 3. REST API Integration Tests (`crates/web/tests/api_tests.rs`)
 
-**Endpoint Tests** (5 tests):
+**Endpoint Tests** (3 tests):
 - `test_health_endpoint` - GET /api/health returns 200 OK
-- `test_create_plate_valid` - POST /api/plate with valid data returns 201 CREATED
-- `test_create_plate_invalid_bolt_spacing` - Invalid data returns 400 BAD_REQUEST
-- `test_create_plate_invalid_json` - Malformed JSON returns 400 BAD_REQUEST
-- `test_create_plate_all_fields_invalid` - All fields invalid returns 400 BAD_REQUEST
+- `test_generate_endpoint_invalid_plate` - POST /api/generate with invalid data returns 400 BAD_REQUEST
+- `test_generate_endpoint_valid_plate` - POST /api/generate with valid data generates model files
 
 ## Testing Patterns
 
@@ -146,11 +144,11 @@ API tests use Axum's testing utilities with `tower::ServiceExt::oneshot`:
 
 ```rust
 #[tokio::test]
-async fn test_create_plate_valid() {
-    let app = create_test_router().await;
+async fn test_generate_endpoint_invalid_plate() {
+    let app = create_test_router();
 
     let plate = ActuatorPlate {
-        bolt_spacing: Millimeters(60),
+        bolt_spacing: Millimeters(0), // Invalid!
         // ... other fields
     };
 
@@ -158,7 +156,7 @@ async fn test_create_plate_valid() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/api/plate")
+                .uri("/api/generate")
                 .header("content-type", "application/json")
                 .body(Body::from(serde_json::to_string(&plate).unwrap()))
                 .unwrap(),
@@ -166,7 +164,7 @@ async fn test_create_plate_valid() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::CREATED);
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 ```
 

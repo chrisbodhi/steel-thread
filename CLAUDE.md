@@ -128,38 +128,9 @@ The server runs on port 3030 and serves:
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
-| POST | `/api/plate` | Validate plate configuration |
-
-### POST /api/plate
-
-Request:
-```json
-{
-  "bolt_spacing": 60,
-  "bolt_diameter": 10,
-  "bracket_height": 40,
-  "bracket_width": 30,
-  "pin_diameter": 10,
-  "plate_thickness": 8
-}
-```
-
-Success (201):
-```json
-{
-  "success": true,
-  "got_it": true
-}
-```
-
-Error (400):
-```json
-{
-  "success": false,
-  "got_it": false,
-  "errors": ["Bolt spacing must be greater than 0"]
-}
-```
+| POST | `/api/generate` | Generate STEP and glTF model files |
+| GET | `/api/download/step` | Download generated STEP file |
+| GET | `/api/download/gltf` | Download generated glTF file |
 
 ## Frontend Development
 
@@ -184,7 +155,7 @@ Components are installed to `frontend/src/components/ui/`. You own the source co
 ### Calling the API
 
 ```tsx
-const response = await fetch('/api/plate', {
+const response = await fetch('/api/generate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -193,6 +164,7 @@ const response = await fetch('/api/plate', {
     bracket_height: 40,
     bracket_width: 30,
     pin_diameter: 10,
+    pin_count: 6,
     plate_thickness: 8,
   }),
 });
@@ -216,11 +188,11 @@ All validators return `Result<(), PlateValidationError>`.
 
 ## Testing
 
-**Current test count: 24 fast tests + 1 ignored integration test**
-- 15 validation unit tests
+**Current test count: 25 fast tests + 3 ignored integration tests**
+- 18 validation unit tests
 - 4 parametric unit tests
-- 1 parametric integration test (ignored - requires zoo CLI)
-- 5 REST API integration tests
+- 3 parametric integration tests (ignored - require zoo CLI)
+- 3 REST API integration tests
 
 ```bash
 just test                           # All fast tests (default)

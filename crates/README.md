@@ -25,10 +25,10 @@ Business logic for validating actuator plate configurations.
 
 Axum-based REST API server.
 
-- HTTP endpoints (`/api/health`, `/api/plate`)
+- HTTP endpoints (`/api/health`, `/api/generate`, `/api/download/step`, `/api/download/gltf`)
 - Static file serving for the frontend
 - Production binary target
-- Integration with validation crate
+- Integration with validation and parametric crates
 
 ### [`parametric/`](./parametric)
 
