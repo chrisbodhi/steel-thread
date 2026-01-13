@@ -8,6 +8,8 @@
 
 @settings(defaultLengthUnit = mm, kclVersion = 1.0)
 
+aluminum = appearance::hexString([169, 172, 182])
+
 export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, bracket_width, pin_diameter, pin_count) {
   centerCircles = startSketchOn(XZ)
     |> circle(radius = pin_diameter / 2, center = [50, 0])
@@ -51,4 +53,5 @@ export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, br
     |> subtract2d(tool = upperBoltCircles)
     |> subtract2d(tool = lowerBoltCircles)
     |> extrude(length = plate_thickness)
+    |> appearance(color = aluminum)
 }
