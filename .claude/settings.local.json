@@ -6,7 +6,8 @@
       "Bash(find:*)",
       "Bash(fd:*)",
       "Bash(cargo doc:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(gh issue create:*)"
     ],
     "deny": [],
     "ask": []
