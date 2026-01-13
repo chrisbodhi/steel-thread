@@ -30,7 +30,10 @@ interface ModelViewerProps {
   alt?: string;
 }
 
-export function ModelViewer({ src, alt = "3D model" }: ModelViewerProps) {
+export function ModelViewer({
+  src,
+  alt = "a 3D representation of your specified actuator plate",
+}: ModelViewerProps) {
   const [loaded, setLoaded] = useState(false);
   const viewerRef = useRef<HTMLElement>(null);
 
@@ -40,6 +43,7 @@ export function ModelViewer({ src, alt = "3D model" }: ModelViewerProps) {
 
     // Reset loaded state when src changes
     setLoaded(false);
+    console.log("no longer loaded");
 
     const handleLoad = () => setLoaded(true);
     const handleError = (e: any) => console.error("Model load error:", e);

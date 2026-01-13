@@ -123,7 +123,7 @@ async fn download_step() -> impl IntoResponse {
 }
 
 async fn download_gltf() -> impl IntoResponse {
-    let file_path = "output_dir/output.gltf";
+    let file_path = "output_dir/source.gltf";
 
     match tokio::fs::read(file_path).await {
         Ok(contents) => {

@@ -75,6 +75,8 @@ export function App() {
 
       const data = await res.json();
 
+      console.log(JSON.stringify(data, null, 2));
+
       if (data.success && data.download_url) {
         setDownloadUrl(data.download_url);
         setModelSrc(`/api/download/gltf?t=${Date.now()}`); // Switch to generated model
@@ -107,10 +109,7 @@ export function App() {
         <CardContent className="flex gap-4">
           <div className="flex-1 min-w-0">
             <div className="w-full aspect-square min-h-96">
-              <ModelViewer
-                src={modelSrc}
-                alt="Actuator plate model"
-              />
+              <ModelViewer src={modelSrc} alt="Actuator plate model" />
             </div>
           </div>
           <div className="flex-1 min-w-0">
