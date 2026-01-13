@@ -14,7 +14,8 @@ import { ThemePicker } from "./components/ui/theme-picker";
 import { APITester } from "./APITester";
 
 import "./index.css";
-import React, { useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import { ModelViewer } from "./components/model-viewer";
 
 function Combined({
   forProp,
@@ -43,6 +44,7 @@ export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelSrc, setModelSrc] = useState("/api/download/gltf");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,6 +77,7 @@ export function App() {
 
       if (data.success && data.download_url) {
         setDownloadUrl(data.download_url);
+        setModelSrc(`/api/download/gltf?t=${Date.now()}`); // Switch to generated model
       } else if (data.errors && data.errors.length > 0) {
         setErrorMessage(data.errors.join(", "));
       } else {
@@ -102,22 +105,17 @@ export function App() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">
-          <div style={{ maxWidth: "50%" }}>
-            <img
-              src="https://i.pinimg.com/originals/35/c0/2b/35c02b534cdbacbea92ae64ee3fe0a1d.png"
-              alt="Cat CAD"
-            />
+          <div className="flex-1 min-w-0">
+            <div className="w-full aspect-square min-h-96">
+              <ModelViewer
+                src={modelSrc}
+                alt="Actuator plate model"
+              />
+            </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gridTemplateRows: "repeat(4, auto)",
-                  gap: "1rem",
-                }}
-              >
+              <div className="grid grid-cols-2 auto-rows-auto gap-4">
                 <Combined
                   forProp="boltSpacing"
                   name="Bolt Spacing"
