@@ -77,14 +77,16 @@ The frontend makes requests to `/api/*` which:
 
 Example:
 ```tsx
-const response = await fetch('/api/plate', {
+const response = await fetch('/api/generate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     bolt_spacing: 60,
     bolt_diameter: 10,
     bracket_height: 40,
+    bracket_width: 30,
     pin_diameter: 10,
+    pin_count: 6,
     plate_thickness: 8,
   }),
 });

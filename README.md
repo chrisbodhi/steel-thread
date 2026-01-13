@@ -112,7 +112,9 @@ bacon test
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
-| POST | `/api/plate` | Validate plate configuration |
+| POST | `/api/generate` | Generate STEP and glTF model files |
+| GET | `/api/download/step` | Download generated STEP file |
+| GET | `/api/download/gltf` | Download generated glTF file |
 
 ## Documentation
 

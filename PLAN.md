@@ -6,7 +6,7 @@ This branch (`remove-ssr`) replaced the server-side rendered UI with a React SPA
 
 ### Completed
 - [x] Axum API server serving on http://localhost:3030
-- [x] REST API with validation endpoint (`POST /api/plate`)
+- [x] REST API with model generation endpoint (`POST /api/generate`)
 - [x] React SPA with Bun (development server with HMR)
 - [x] Production build: Rust serves API + static frontend from single process
 - [x] Shared validation crate (`no_std` compatible)
@@ -20,7 +20,7 @@ This branch (`remove-ssr`) replaced the server-side rendered UI with a React SPA
   - [ ] `bracket_width` in mm (default: 30, min: 10, max: 100)
   - [ ] `pin_diameter` in mm (default: 10, min: 5, max: 30)
   - [ ] `plate_thickness` in mm (default: 8, min: 2, max: 20)
-- [ ] Connect form to `/api/plate` endpoint
+- [ ] Connect form to `/api/generate` endpoint
 - [ ] Display validation errors from API
 - [ ] Real-time validation feedback (consider WASM client-side validation)
 
