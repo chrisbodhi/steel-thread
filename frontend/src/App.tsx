@@ -11,8 +11,6 @@ import { Label } from "./components/ui/label";
 import { Button } from "./components/ui/button";
 import { ThemePicker } from "./components/ui/theme-picker";
 
-import { APITester } from "./APITester";
-
 import "./index.css";
 import { useState, type FormEvent } from "react";
 import { ModelViewer } from "./components/model-viewer";
@@ -178,7 +176,6 @@ export function App() {
             </form>
           </div>
         </CardContent>
-        <APITester />
         <CardFooter>Made in PGH. {new Date().getFullYear()}. AMDG.</CardFooter>
       </Card>
     </div>

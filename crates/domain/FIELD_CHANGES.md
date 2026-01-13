@@ -40,7 +40,6 @@ When adding a new field like `bracket_width: Millimeters` to `ActuatorPlate`:
 - [ ] `src/plate.kcl` - Use parameter in CAD operations (if applicable)
 
 ### 5. **Frontend** (`frontend/`)
-- [ ] `src/APITester.tsx` - Add field to the JSON body in `testEndpoint()` function
 - [ ] Update any form components that construct `ActuatorPlate` (when built)
 
 ### 6. **Documentation**
