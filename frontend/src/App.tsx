@@ -14,29 +14,8 @@ import { ThemePicker } from "./components/ui/theme-picker";
 import { APITester } from "./APITester";
 
 import "./index.css";
-import React, { useState, type FormEvent } from "react";
-import "@google/model-viewer";
-
-// Declare model-viewer as a custom element for TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "model-viewer": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          src?: string;
-          alt?: string;
-          "auto-rotate"?: boolean;
-          "camera-controls"?: boolean;
-          "shadow-intensity"?: string;
-          ar?: boolean;
-          loading?: "auto" | "lazy" | "eager";
-          poster?: string;
-        },
-        HTMLElement
-      >;
-    }
-  }
-}
+import { useState, type FormEvent } from "react";
+import { ModelViewer } from "./components/model-viewer";
 
 function Combined({
   forProp,
@@ -65,6 +44,7 @@ export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelSrc, setModelSrc] = useState("/api/download/gltf");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,6 +77,7 @@ export function App() {
 
       if (data.success && data.download_url) {
         setDownloadUrl(data.download_url);
+        setModelSrc(`/api/download/gltf?t=${Date.now()}`); // Switch to generated model
       } else if (data.errors && data.errors.length > 0) {
         setErrorMessage(data.errors.join(", "));
       } else {
@@ -124,22 +105,17 @@ export function App() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">
-          <div style={{ maxWidth: "50%" }}>
-            <img
-              src="https://i.pinimg.com/originals/35/c0/2b/35c02b534cdbacbea92ae64ee3fe0a1d.png"
-              alt="Cat CAD"
-            />
+          <div className="flex-1 min-w-0">
+            <div className="w-full aspect-square min-h-96">
+              <ModelViewer
+                src={modelSrc}
+                alt="Actuator plate model"
+              />
+            </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gridTemplateRows: "repeat(4, auto)",
-                  gap: "1rem",
-                }}
-              >
+              <div className="grid grid-cols-2 auto-rows-auto gap-4">
                 <Combined
                   forProp="boltSpacing"
                   name="Bolt Spacing"
@@ -181,47 +157,15 @@ export function App() {
               </Button>
 
               {downloadUrl && (
-                <div className="flex flex-col gap-4">
-                  <div className="p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
-                    <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-                      Model generated successfully!
-                    </p>
-                    <Button asChild className="w-full">
-                      <a href={downloadUrl} download>
-                        Download STEP File
-                      </a>
-                    </Button>
-                  </div>
-
-                  <div className="w-full h-96 bg-gray-100 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-800 flex items-center justify-center">
-                    <model-viewer
-                      src="/api/download/gltf"
-                      alt="Generated actuator plate model"
-                      auto-rotate
-                      camera-controls
-                      shadow-intensity="1"
-                      style={{ width: "100%", height: "100%" }}
-                    >
-                      <div
-                        slot="progress-bar"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                          flexDirection: "column",
-                          gap: "1rem",
-                        }}
-                      >
-                        <div className="text-gray-600 dark:text-gray-400 text-lg">
-                          Loading 3D model...
-                        </div>
-                        <div className="w-48 h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 animate-pulse" style={{ width: "60%" }}></div>
-                        </div>
-                      </div>
-                    </model-viewer>
-                  </div>
+                <div className="p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-800 dark:text-green-200 mb-2">
+                    Model generated successfully!
+                  </p>
+                  <Button asChild className="w-full">
+                    <a href={downloadUrl} download>
+                      Download STEP File
+                    </a>
+                  </Button>
                 </div>
               )}
 

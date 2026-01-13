@@ -3,6 +3,6 @@ frontend/node_modules/
 crates/parametric/src/params.kcl
 .DS_Store
 
-*.step
-*.gltf
+output_dir/output.step
+output_dir/output.gltf
 crates/web/dist
