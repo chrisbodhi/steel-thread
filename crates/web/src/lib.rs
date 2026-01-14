@@ -1,20 +1,28 @@
 use axum::{
-    extract::Json,
+    extract::{Json, Path, State},
     http::{header, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Router,
 };
 use domain::ActuatorPlate;
-use parametric::generate_model;
+use parametric::{generate_model, GenerationResult};
 use serde::Serialize;
+use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
+use uuid::Uuid;
+
+/// Shared application state for storing generation results
+pub type AppState = Arc<RwLock<HashMap<String, GenerationResult>>>;
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    let app = create_router();
+    let state: AppState = Arc::new(RwLock::new(HashMap::new()));
+    let app = create_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3030));
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -26,16 +34,17 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn create_router() -> Router {
+pub fn create_router(state: AppState) -> Router {
     // Serve static files from dist/, fallback to index.html for SPA routing
     let serve_dir = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
 
     Router::new()
         .route("/api/health", get(health))
         .route("/api/generate", post(generate_plate_model))
-        .route("/api/download/step", get(download_step))
-        .route("/api/download/gltf", get(download_gltf))
+        .route("/api/download/step/{session_id}", get(download_step))
+        .route("/api/download/gltf/{session_id}", get(download_gltf))
         .fallback_service(serve_dir)
+        .with_state(state)
 }
 
 async fn health() -> impl IntoResponse {
@@ -43,13 +52,28 @@ async fn health() -> impl IntoResponse {
     (StatusCode::OK, Json(res)).into_response()
 }
 
-pub async fn generate_plate_model(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
+pub async fn generate_plate_model(
+    State(state): State<AppState>,
+    Json(payload): Json<ActuatorPlate>,
+) -> impl IntoResponse {
     match generate_model(&payload) {
-        Ok(_) => {
+        Ok(result) => {
+            let session_id = Uuid::new_v4().to_string();
+            let download_url = format!("/api/download/step/{}", session_id);
+            let gltf_url = format!("/api/download/gltf/{}", session_id);
+
+            // Store the generation result
+            {
+                let mut sessions = state.write().await;
+                sessions.insert(session_id.clone(), result);
+            }
+
             let res = GenerateSuccessResponse {
                 success: true,
                 message: "Model files generated successfully".to_string(),
-                download_url: "/api/download/step".to_string(),
+                download_url,
+                gltf_url,
+                session_id,
             };
             (StatusCode::OK, Json(res)).into_response()
         }
@@ -73,10 +97,22 @@ pub async fn generate_plate_model(Json(payload): Json<ActuatorPlate>) -> impl In
     }
 }
 
-async fn download_step() -> impl IntoResponse {
-    let file_path = "output_dir/output.step";
+async fn download_step(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let sessions = state.read().await;
 
-    match tokio::fs::read(file_path).await {
+    let Some(result) = sessions.get(&session_id) else {
+        let res = ErrorResponse {
+            success: false,
+            got_it: false,
+            errors: vec!["Session not found. Please generate the model first.".to_string()],
+        };
+        return (StatusCode::NOT_FOUND, Json(res)).into_response();
+    };
+
+    match tokio::fs::read(&result.step_file).await {
         Ok(contents) => {
             let headers = [
                 (header::CONTENT_TYPE, "application/STEP"),
@@ -99,10 +135,22 @@ async fn download_step() -> impl IntoResponse {
     }
 }
 
-async fn download_gltf() -> impl IntoResponse {
-    let file_path = "output_dir/source.gltf";
+async fn download_gltf(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let sessions = state.read().await;
 
-    match tokio::fs::read(file_path).await {
+    let Some(result) = sessions.get(&session_id) else {
+        let res = ErrorResponse {
+            success: false,
+            got_it: false,
+            errors: vec!["Session not found. Please generate the model first.".to_string()],
+        };
+        return (StatusCode::NOT_FOUND, Json(res)).into_response();
+    };
+
+    match tokio::fs::read(&result.gltf_file).await {
         Ok(contents) => {
             let headers = [
                 (header::CONTENT_TYPE, "model/gltf+json"),
@@ -135,6 +183,8 @@ struct GenerateSuccessResponse {
     success: bool,
     message: String,
     download_url: String,
+    gltf_url: String,
+    session_id: String,
 }
 
 #[derive(Serialize)]
