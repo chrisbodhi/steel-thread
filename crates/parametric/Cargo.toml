@@ -5,4 +5,5 @@ version.workspace = true
 
 [dependencies]
 domain = { path = "../domain" }
+tempfile = "3"
 validation = { path = "../validation" }

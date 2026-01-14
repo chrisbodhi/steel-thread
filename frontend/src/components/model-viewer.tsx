@@ -41,9 +41,12 @@ export function ModelViewer({
     const viewer = viewerRef.current;
     if (!viewer) return;
 
+    // React doesn't properly set attributes on custom elements,
+    // so we need to set src manually via the ref
+    viewer.setAttribute("src", src);
+
     // Reset loaded state when src changes
     setLoaded(false);
-    console.log("no longer loaded");
 
     const handleLoad = () => setLoaded(true);
     const handleError = (e: any) => console.error("Model load error:", e);

@@ -42,7 +42,7 @@ export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [modelSrc, setModelSrc] = useState("/api/download/gltf");
+  const [modelSrc, setModelSrc] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,7 +77,8 @@ export function App() {
 
       if (data.success && data.download_url) {
         setDownloadUrl(data.download_url);
-        setModelSrc(`/api/download/gltf?t=${Date.now()}`); // Switch to generated model
+        // Use the gltf_url from response with cache-busting timestamp
+        setModelSrc(`${data.gltf_url}?t=${Date.now()}`);
       } else if (data.errors && data.errors.length > 0) {
         setErrorMessage(data.errors.join(", "));
       } else {
@@ -107,7 +108,21 @@ export function App() {
         <CardContent className="flex gap-4">
           <div className="flex-1 min-w-0">
             <div className="w-full aspect-square min-h-96">
-              <ModelViewer src={modelSrc} alt="Actuator plate model" />
+              {modelSrc ? (
+                <ModelViewer src={modelSrc} alt="Actuator plate model" />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center rounded-md border"
+                  style={{
+                    backgroundColor: "hsl(var(--muted))",
+                    borderColor: "hsl(var(--border))",
+                  }}
+                >
+                  <span className="text-muted-foreground">
+                    Generate a model to preview it here
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex-1 min-w-0">

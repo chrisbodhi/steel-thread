@@ -1,6 +1,8 @@
+use std::path::{Path, PathBuf};
 use std::process::ExitStatus;
 
 use domain::ActuatorPlate;
+use tempfile::TempDir;
 use validation;
 
 pub trait Validation {
@@ -25,7 +27,31 @@ pub enum AllErrors {
     ValidationError,
 }
 
-fn generate_params_file(plate: &ActuatorPlate) -> std::io::Result<()> {
+/// Result of a successful model generation, containing paths to generated files.
+/// The TempDir is held to prevent cleanup until the caller is done with the files.
+#[derive(Debug)]
+pub struct GenerationResult {
+    /// The temporary directory containing all generated files.
+    /// Files are cleaned up when this is dropped.
+    pub temp_dir: TempDir,
+    /// Path to the generated STEP file
+    pub step_file: PathBuf,
+    /// Path to the generated glTF file
+    pub gltf_file: PathBuf,
+}
+
+/// Get the source directory containing KCL files.
+/// Returns the path that works whether running from project root or crates/parametric.
+fn get_kcl_source_dir() -> &'static str {
+    if Path::new("crates/parametric/src/main.kcl").exists() {
+        "crates/parametric/src"
+    } else {
+        "src"
+    }
+}
+
+/// Write params.kcl to the specified directory
+fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
     let content = format!(
         "@settings(defaultLengthUnit = mm, kclVersion = 1.0)\n\n\
          export plateThickness = {}\n\
@@ -44,73 +70,94 @@ fn generate_params_file(plate: &ActuatorPlate) -> std::io::Result<()> {
         plate.pin_count
     );
 
-    // Write params.kcl to the same directory as main.kcl
-    // Try crates/parametric/src/params.kcl first (when running from project root),
-    // then fall back to src/params.kcl (when running from crates/parametric)
-    let params_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
-        "crates/parametric/src/params.kcl"
-    } else {
-        "src/params.kcl"
-    };
+    std::fs::write(dir.join("params.kcl"), content)?;
+    Ok(())
+}
 
-    std::fs::write(params_path, content)?;
+/// Copy KCL source files to the temp directory
+fn copy_kcl_sources(temp_dir: &Path) -> std::io::Result<()> {
+    let source_dir = get_kcl_source_dir();
+
+    // Copy main.kcl and plate.kcl to temp dir
+    std::fs::copy(
+        Path::new(source_dir).join("main.kcl"),
+        temp_dir.join("main.kcl"),
+    )?;
+    std::fs::copy(
+        Path::new(source_dir).join("plate.kcl"),
+        temp_dir.join("plate.kcl"),
+    )?;
 
     Ok(())
 }
 
-pub fn generate_model(plate: &ActuatorPlate) -> Result<(), AllErrors> {
-    if let Err(e) = validation::validate(&plate) {
+pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErrors> {
+    if let Err(e) = validation::validate(plate) {
         eprintln!("oops: {}", e);
         return Err(AllErrors::ValidationError);
     }
 
-    // Create output directory if it doesn't exist
-    if let Err(e) = std::fs::create_dir_all("output_dir") {
-        eprintln!("Failed to create output directory: {}", e);
+    // Create a temporary directory for this generation request
+    let temp_dir = match TempDir::new() {
+        Ok(dir) => dir,
+        Err(e) => {
+            eprintln!("Failed to create temp directory: {}", e);
+            return Err(AllErrors::GeneratorError);
+        }
+    };
+
+    let temp_path = temp_dir.path();
+
+    // Copy KCL source files to temp dir
+    if let Err(e) = copy_kcl_sources(temp_path) {
+        eprintln!("Failed to copy KCL sources: {}", e);
         return Err(AllErrors::GeneratorError);
     }
 
-    if let Err(e) = generate_params_file(&plate) {
+    // Write params.kcl to temp dir
+    if let Err(e) = write_params_file(plate, temp_path) {
         eprintln!("oops on that param: {}", e);
         return Err(AllErrors::GeneratorError);
     }
 
     // Generate STEP file
-    if let Err(e) = generate_step(plate.clone()) {
+    if let Err(e) = generate_step_in_dir(plate, temp_path) {
         eprintln!("oops generating STEP: {:?}", e);
         return Err(AllErrors::GeneratorError);
     }
 
     // Generate glTF file
-    if let Err(e) = generate_gltf(plate.clone()) {
+    if let Err(e) = generate_gltf_in_dir(plate, temp_path) {
         eprintln!("oops generating glTF: {:?}", e);
         return Err(AllErrors::GeneratorError);
     }
 
-    Ok(())
+    let step_file = temp_path.join("output.step");
+    let gltf_file = temp_path.join("source.gltf");
+
+    Ok(GenerationResult {
+        temp_dir,
+        step_file,
+        gltf_file,
+    })
 }
 
-fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
-    if let Err(e) = validation::validate(&plate) {
+/// Generate STEP file in the specified directory
+fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
+    if let Err(e) = validation::validate(plate) {
         eprintln!("oops: {}", e);
         return Err(ValidationError::NoStep);
     }
 
-    // Try crates/parametric/src/main.kcl first (when running from project root),
-    // then fall back to src/main.kcl (when running from crates/parametric)
-    let kcl_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
-        "crates/parametric/src/main.kcl"
-    } else {
-        "src/main.kcl"
-    };
+    let main_kcl = dir.join("main.kcl");
 
     let status = std::process::Command::new("zoo")
-        .args(&[
+        .args([
             "kcl",
             "export",
             "--output-format=step",
-            kcl_path,
-            "output_dir",
+            main_kcl.to_str().unwrap(),
+            dir.to_str().unwrap(),
         ])
         .status();
 
@@ -118,36 +165,35 @@ fn generate_step(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
         Ok(stat) => Ok(stat),
         Err(e) => {
             eprintln!("ouch: {}", e);
-            return Err(ValidationError::NoStep);
+            Err(ValidationError::NoStep)
         }
     }
 }
 
-fn generate_gltf(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
-    if let Err(e) = validation::validate(&plate) {
+/// Generate glTF file in the specified directory by converting the STEP file
+fn generate_gltf_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
+    if let Err(e) = validation::validate(plate) {
         eprintln!("oops: {}", e);
         return Err(ValidationError::NoStep);
     }
 
-    // The STEP file should have been generated by generate_step()
-    let step_file = "output_dir/output.step";
-    let output_dir = "output_dir";
+    let step_file = dir.join("output.step");
 
     // Check if STEP file exists
-    if !std::path::Path::new(step_file).exists() {
-        eprintln!("STEP file does not exist at {}", step_file);
+    if !step_file.exists() {
+        eprintln!("STEP file does not exist at {:?}", step_file);
         return Err(ValidationError::NoStep);
     }
 
     // Convert STEP file to glTF using zoo file convert
     let status = std::process::Command::new("zoo")
-        .args(&[
+        .args([
             "file",
             "convert",
             "--src-format=step",
             "--output-format=gltf",
-            step_file,
-            output_dir,
+            step_file.to_str().unwrap(),
+            dir.to_str().unwrap(),
         ])
         .status();
 
@@ -155,7 +201,7 @@ fn generate_gltf(plate: ActuatorPlate) -> Result<ExitStatus, ValidationError> {
         Ok(stat) => Ok(stat),
         Err(e) => {
             eprintln!("ouch: {}", e);
-            return Err(ValidationError::NoStep);
+            Err(ValidationError::NoStep)
         }
     }
 }
@@ -171,7 +217,8 @@ mod tests {
         let mut plate = ActuatorPlate::default();
         plate.bolt_diameter = Millimeters(0);
 
-        let result = generate_step(plate);
+        let temp_dir = TempDir::new().unwrap();
+        let result = generate_step_in_dir(&plate, temp_dir.path());
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), ValidationError::NoStep);
@@ -183,21 +230,17 @@ mod tests {
         let plate = ActuatorPlate::default();
 
         // This test requires zoo CLI to be installed and authenticated
-        // It will generate params.kcl, STEP, and glTF files
+        // It will generate params.kcl, STEP, and glTF files in a temp directory
         let result = generate_model(&plate);
 
         // Should succeed in generating all files
         assert!(result.is_ok());
 
-        // Cleanup
-        let params_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
-            "crates/parametric/src/params.kcl"
-        } else {
-            "src/params.kcl"
-        };
-        std::fs::remove_file(params_path).ok();
-        std::fs::remove_file("output_dir/output.step").ok();
-        std::fs::remove_file("output_dir/output.gltf").ok();
+        let gen_result = result.unwrap();
+        assert!(gen_result.step_file.exists());
+        assert!(gen_result.gltf_file.exists());
+
+        // Temp directory and files are automatically cleaned up when gen_result is dropped
     }
 
     #[test]
@@ -212,21 +255,17 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_params_file_creates_valid_kcl() {
+    fn test_write_params_file_creates_valid_kcl() {
         let plate = ActuatorPlate::default();
+        let temp_dir = TempDir::new().unwrap();
 
-        let result = generate_params_file(&plate);
+        let result = write_params_file(&plate, temp_dir.path());
         assert!(result.is_ok());
 
-        // Determine the correct params.kcl path (same logic as generate_params_file)
-        let params_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
-            "crates/parametric/src/params.kcl"
-        } else {
-            "src/params.kcl"
-        };
+        let params_path = temp_dir.path().join("params.kcl");
 
         // Read and verify the file content
-        let content = std::fs::read_to_string(params_path).unwrap();
+        let content = std::fs::read_to_string(&params_path).unwrap();
 
         // Check for correct format
         assert!(content.starts_with("@settings(defaultLengthUnit = mm, kclVersion = 1.0)"));
@@ -238,8 +277,7 @@ mod tests {
         assert!(content.contains("export pinDiameter"));
         assert!(content.contains("export pinCount = 6"));
 
-        // Cleanup
-        std::fs::remove_file(params_path).ok();
+        // Temp directory is automatically cleaned up
     }
 
     #[test]
@@ -247,7 +285,8 @@ mod tests {
         let mut plate = ActuatorPlate::default();
         plate.bolt_diameter = Millimeters(0);
 
-        let result = generate_gltf(plate);
+        let temp_dir = TempDir::new().unwrap();
+        let result = generate_gltf_in_dir(&plate, temp_dir.path());
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), ValidationError::NoStep);
@@ -258,18 +297,22 @@ mod tests {
     #[ignore]
     fn test_generate_step_creates_file_with_zoo_cli() {
         let plate = ActuatorPlate::default();
+        let temp_dir = TempDir::new().unwrap();
+
+        // Copy KCL sources and write params
+        copy_kcl_sources(temp_dir.path()).unwrap();
+        write_params_file(&plate, temp_dir.path()).unwrap();
 
         // This will only pass if, as pre-requisites:
         // 1. zoo CLI is installed
         // 2. user is authenticated against zoo
-        // 3. main.kcl exists
-        // 4. output_dir exists
-        let result = generate_step(plate);
+        let result = generate_step_in_dir(&plate, temp_dir.path());
 
         match result {
             Ok(status) => {
                 // Check if command succeeded
                 assert!(status.success(), "zoo command should succeed");
+                assert!(temp_dir.path().join("output.step").exists());
             }
             Err(e) => {
                 // If zoo is not installed, the test should be skipped
@@ -277,14 +320,7 @@ mod tests {
             }
         }
 
-        // Cleanup
-        let params_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
-            "crates/parametric/src/params.kcl"
-        } else {
-            "src/params.kcl"
-        };
-        std::fs::remove_file(params_path).ok();
-        std::fs::remove_file("output_dir/output.step").ok();
+        // Temp directory is automatically cleaned up
     }
 
     // This test requires the `zoo` CLI to be installed and for the user to be authenticated; it is ignored by default
@@ -292,23 +328,27 @@ mod tests {
     #[ignore]
     fn test_generate_gltf_creates_file_with_zoo_cli() {
         let plate = ActuatorPlate::default();
+        let temp_dir = TempDir::new().unwrap();
 
-        // This will only pass if, as pre-requisites:
-        // 1. zoo CLI is installed
-        // 2. user is authenticated against zoo
-        // 3. main.kcl exists
-        // 4. output_dir exists
+        // Copy KCL sources and write params
+        copy_kcl_sources(temp_dir.path()).unwrap();
+        write_params_file(&plate, temp_dir.path()).unwrap();
 
         // Generate STEP file first (glTF generation now converts from STEP)
-        let step_result = generate_step(plate.clone());
+        let step_result = generate_step_in_dir(&plate, temp_dir.path());
         assert!(step_result.is_ok(), "STEP generation should succeed");
+        assert!(
+            step_result.unwrap().success(),
+            "STEP generation should succeed"
+        );
 
-        let result = generate_gltf(plate);
+        let result = generate_gltf_in_dir(&plate, temp_dir.path());
 
         match result {
             Ok(status) => {
                 // Check if command succeeded
                 assert!(status.success(), "zoo command should succeed");
+                assert!(temp_dir.path().join("source.gltf").exists());
             }
             Err(e) => {
                 // If zoo is not installed, the test should be skipped
@@ -316,14 +356,6 @@ mod tests {
             }
         }
 
-        // Cleanup
-        let params_path = if std::path::Path::new("crates/parametric/src/main.kcl").exists() {
-            "crates/parametric/src/params.kcl"
-        } else {
-            "src/params.kcl"
-        };
-        std::fs::remove_file(params_path).ok();
-        std::fs::remove_file("output_dir/output.step").ok();
-        std::fs::remove_file("output_dir/output.gltf").ok();
+        // Temp directory is automatically cleaned up
     }
 }

@@ -4,10 +4,14 @@ use axum::{
 };
 use domain::{ActuatorPlate, Millimeters};
 use http_body_util::BodyExt;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower::ServiceExt;
 
 fn create_test_router() -> axum::Router {
-    web::create_router()
+    let state = Arc::new(RwLock::new(HashMap::new()));
+    web::create_router(state)
 }
 
 #[tokio::test]
@@ -103,6 +107,10 @@ async fn test_generate_endpoint_valid_plate() {
         // If zoo is installed and authenticated
         assert_eq!(json["success"], true);
         assert!(json.get("message").is_some());
+        // Should have session_id and URLs in response
+        assert!(json.get("session_id").is_some());
+        assert!(json.get("download_url").is_some());
+        assert!(json.get("gltf_url").is_some());
     } else {
         // If zoo is not available
         assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -110,8 +118,5 @@ async fn test_generate_endpoint_valid_plate() {
         assert!(json["errors"].as_array().unwrap().len() > 0);
     }
 
-    // Cleanup if files were created
-    std::fs::remove_file("params.kcl").ok();
-    std::fs::remove_file("output_dir/output.step").ok();
-    std::fs::remove_file("output_dir/output.gltf").ok();
+    // No cleanup needed - temp files are automatically cleaned up
 }
