@@ -6,3 +6,5 @@ crates/parametric/src/params.kcl
 output_dir/output.step
 output_dir/output.gltf
 crates/web/dist
+playwright-report
+test-results
