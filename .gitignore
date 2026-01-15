@@ -10,4 +10,5 @@ playwright-report
 test-results
 
 *.tfstate
+*.tfstate.backup
 .terraform/providers
