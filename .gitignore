@@ -4,7 +4,10 @@ crates/parametric/src/params.kcl
 .DS_Store
 
 output_dir/output.step
-output_dir/output.gltf
+output_dir/*.gltf
 crates/web/dist
 playwright-report
 test-results
+
+*.tfstate
+.terraform/providers
