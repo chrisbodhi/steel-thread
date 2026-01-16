@@ -24,7 +24,13 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let state: AppState = Arc::new(RwLock::new(HashMap::new()));
     let app = create_router(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3030));
+    // Read port from environment variable (for App Runner compatibility)
+    let port: u16 = std::env::var("PORT")
+        .unwrap_or_else(|_| "3030".to_string())
+        .parse()
+        .unwrap_or(3030);
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     tracing::info!("listening on {}", listener.local_addr()?);

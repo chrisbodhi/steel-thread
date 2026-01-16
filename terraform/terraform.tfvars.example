@@ -1,0 +1,18 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+aws_region   = "us-east-1"  # Use us-east-1 for lowest costs
+environment  = "prod"
+image_tag    = "latest"
+
+# Logging
+log_level         = "info"
+log_retention_days = 7  # Lower for cost savings
+
+# App Runner configuration
+app_runner_cpu    = "1024"  # 1 vCPU
+app_runner_memory = "2 GB"
+
+# Auto-scaling
+min_instances           = 1
+max_instances           = 3
+max_concurrent_requests = 10  # Adjust based on generation time
