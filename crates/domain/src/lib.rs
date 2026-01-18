@@ -72,8 +72,10 @@ impl ActuatorPlate {
             plate_thickness,
         }
     }
+}
 
-    pub fn default() -> Self {
+impl Default for ActuatorPlate {
+    fn default() -> Self {
         ActuatorPlate {
             bolt_spacing: Millimeters(60),
             bolt_diameter: Millimeters(10),

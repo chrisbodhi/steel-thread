@@ -3,7 +3,6 @@ use std::process::ExitStatus;
 
 use domain::ActuatorPlate;
 use tempfile::TempDir;
-use validation;
 
 pub trait Validation {
     // TODO: figure out how to mesh `plate` arg here with generic trait
