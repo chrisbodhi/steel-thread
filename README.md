@@ -1,4 +1,4 @@
-# Steel Thread for BAS
+# Platerator 
 
 An actuator plate configurator exploring web → parametric CAD → quote pipelines.
 
@@ -7,6 +7,8 @@ An actuator plate configurator exploring web → parametric CAD → quote pipeli
 - [Rust](https://rustup.rs/) (latest stable)
 - [Bun](https://bun.sh/) (JavaScript runtime)
 - [Just](https://github.com/casey/just) (command runner) - install via `cargo install just` or `brew install just`
+- [Terraform](https://...) (IaC)
+- [AWS CLI](https://...) (Cloud provider)
 
 ## Quick Start
 
@@ -107,6 +109,30 @@ just test
 bacon test
 ```
 
+## AWS Deployment (Docker-Free!)
+
+Platerator deploys to AWS Lightsail with **no Docker required**:
+
+```bash
+# One-time setup (~5 min)
+just tf-init       # Initialize Terraform
+just tf-plan       # Review infrastructure (13 resources, ~$5/month)
+just tf-apply      # Create AWS infrastructure
+just set-zoo-token # Store zoo CLI token
+
+# Deploy application
+git push origin master  # Triggers GitHub Actions build
+just deploy             # Download + deploy to Lightsail
+```
+
+**How it works**: GitHub Actions builds the Linux binary, you download it and deploy to Lightsail using your local AWS credentials. No Docker on your machine, no container overhead in production.
+
+See [QUICKSTART.md](./QUICKSTART.md) for step-by-step guide.
+
+**Infrastructure**: Lightsail ($3.50/mo), S3, DynamoDB, Secrets Manager, CloudWatch
+
+
+
 ## API Endpoints
 
 | Method | Path | Description |
@@ -118,9 +144,17 @@ bacon test
 
 ## Documentation
 
+### Development
 - [CLAUDE.md](./CLAUDE.md) - Development guide (architecture, patterns, workflows)
 - [crates/README.md](./crates/README.md) - Rust crates documentation
 - [frontend/README.md](./frontend/README.md) - Frontend documentation
 - [TESTING.md](./TESTING.md) - Testing documentation
+
+### Deployment
+- [QUICKSTART.md](./QUICKSTART.md) - **Start here** for AWS deployment
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
+- [terraform/README.md](./terraform/README.md) - Infrastructure documentation
+
+### Planning
 - [PLAN.md](./PLAN.md) - Feature roadmap
 - [LEARNING.md](./LEARNING.md) - Technical exploration notes

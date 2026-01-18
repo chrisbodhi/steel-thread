@@ -5,15 +5,20 @@ edition.workspace = true
 
 [dependencies]
 axum = { version = "0.8", features = ["json"] }
+aws-config = "1.5"
+aws-sdk-dynamodb = "1.73"
+aws-sdk-s3 = "1.73"
 domain = { path = "../domain" }
 parametric = { path = "../parametric" }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
 tokio = { version = "1.42", features = ["full"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["fs"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 validation = { path = "../validation" }
 
 [dev-dependencies]
