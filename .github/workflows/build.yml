@@ -79,7 +79,7 @@ jobs:
 
           # Copy frontend dist
           mkdir -p release/dist
-          cp -r frontend/dist/* release/dist/
+          cp -r crates/web/dist/* release/dist/
 
           # Copy KCL files
           mkdir -p release/kcl
