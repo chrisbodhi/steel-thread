@@ -82,14 +82,21 @@ cat > /usr/local/bin/deploy-platerator <<'DEPLOY'
 #!/bin/bash
 set -e
 
-# Find the tarball (get the most recent one)
-TARBALL=$(ls -t /tmp/platerator-*.tar.gz 2>/dev/null | head -1)
+# Count tarballs
+TARBALL_COUNT=$(ls -1 /tmp/platerator-*.tar.gz 2>/dev/null | wc -l)
 
-if [ -z "$TARBALL" ]; then
+if [ "$TARBALL_COUNT" -eq 0 ]; then
     echo "Error: No platerator tarball found in /tmp/"
+    exit 1
+elif [ "$TARBALL_COUNT" -gt 1 ]; then
+    echo "Error: Multiple platerator tarballs found in /tmp/"
+    echo "Please remove old tarballs before deploying:"
+    ls -lh /tmp/platerator-*.tar.gz
     exit 1
 fi
 
+# Get the single tarball
+TARBALL=$(ls /tmp/platerator-*.tar.gz)
 echo "Found tarball: $TARBALL"
 
 echo "Stopping platerator service..."
