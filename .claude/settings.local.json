@@ -9,7 +9,12 @@
       "Bash(cat:*)",
       "Bash(gh issue create:*)",
       "Bash(gh issue view:*)",
-      "Bash(bun run test:e2e:*)"
+      "Bash(bun run test:e2e:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh run watch:*)"
     ],
     "deny": [],
     "ask": []
