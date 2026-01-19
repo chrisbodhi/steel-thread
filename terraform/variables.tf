@@ -57,3 +57,9 @@ variable "max_concurrent_requests" {
   type        = number
   default     = 10
 }
+
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key file for Lightsail instance access"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}

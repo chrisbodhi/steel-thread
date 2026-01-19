@@ -34,6 +34,11 @@ output "cloudwatch_dashboard_name" {
   value       = module.cloudwatch.dashboard_name
 }
 
+output "lightsail_key_pair_name" {
+  description = "SSH key pair name for Lightsail instance"
+  value       = module.lightsail.key_pair_name
+}
+
 output "next_steps" {
   description = "Next steps after terraform apply"
   value = <<-EOT
@@ -45,9 +50,12 @@ output "next_steps" {
        just set-zoo-token
 
     2. Wait for instance to finish setup (~5 minutes):
-       ssh root@${module.lightsail.public_ip} 'tail -f /var/log/cloud-init-output.log'
+       ssh ubuntu@${module.lightsail.public_ip} 'tail -f /var/log/cloud-init-output.log'
 
-    3. Deploy application:
+    3. Deploy zoo token to instance:
+       just deploy-zoo-token
+
+    4. Deploy application:
        # Push code to GitHub (triggers build)
        git push origin master
 
@@ -55,13 +63,13 @@ output "next_steps" {
        # Then download and deploy
        just deploy
 
-    4. Visit your app:
-       ${module.lightsail.public_ip}
+    5. Visit your app:
+       http://${module.lightsail.public_ip}
 
-    5. SSH to instance:
+    6. SSH to instance:
        ${module.lightsail.ssh_command}
 
-    6. View CloudWatch dashboard:
+    7. View CloudWatch dashboard:
        https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${module.cloudwatch.dashboard_name}
   EOT
 }

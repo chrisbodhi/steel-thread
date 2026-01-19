@@ -40,12 +40,18 @@ pub struct GenerationResult {
 }
 
 /// Get the source directory containing KCL files.
-/// Returns the path that works whether running from project root or crates/parametric.
-fn get_kcl_source_dir() -> &'static str {
+/// Checks KCL_SRC_DIR environment variable first, then falls back to local paths.
+fn get_kcl_source_dir() -> String {
+    // First check environment variable (for production deployment)
+    if let Ok(env_dir) = std::env::var("KCL_SRC_DIR") {
+        return env_dir;
+    }
+
+    // Fall back to local development paths
     if Path::new("crates/parametric/src/main.kcl").exists() {
-        "crates/parametric/src"
+        "crates/parametric/src".to_string()
     } else {
-        "src"
+        "src".to_string()
     }
 }
 
@@ -79,11 +85,11 @@ fn copy_kcl_sources(temp_dir: &Path) -> std::io::Result<()> {
 
     // Copy main.kcl and plate.kcl to temp dir
     std::fs::copy(
-        Path::new(source_dir).join("main.kcl"),
+        Path::new(&source_dir).join("main.kcl"),
         temp_dir.join("main.kcl"),
     )?;
     std::fs::copy(
-        Path::new(source_dir).join("plate.kcl"),
+        Path::new(&source_dir).join("plate.kcl"),
         temp_dir.join("plate.kcl"),
     )?;
 

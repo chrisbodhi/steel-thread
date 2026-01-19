@@ -20,5 +20,10 @@ output "availability_zone" {
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh root@${aws_lightsail_static_ip.main.ip_address}"
+  value       = "ssh ubuntu@${aws_lightsail_static_ip.main.ip_address}"
+}
+
+output "key_pair_name" {
+  description = "Name of the SSH key pair"
+  value       = aws_lightsail_key_pair.main.name
 }

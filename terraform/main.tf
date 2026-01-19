@@ -83,4 +83,5 @@ module "lightsail" {
   dynamodb_table = module.dynamodb.table_name
   aws_region     = var.aws_region
   environment    = var.environment
+  ssh_public_key = file(pathexpand(var.ssh_public_key_path))
 }

@@ -1,8 +1,14 @@
+resource "aws_lightsail_key_pair" "main" {
+  name       = "${var.instance_name}-key"
+  public_key = var.ssh_public_key
+}
+
 resource "aws_lightsail_instance" "main" {
   name              = var.instance_name
   availability_zone = var.availability_zone
   blueprint_id      = var.blueprint_id
   bundle_id         = var.bundle_id
+  key_pair_name     = aws_lightsail_key_pair.main.name
 
   user_data = templatefile("${path.module}/user_data.sh", {
     s3_bucket_name = var.s3_bucket_name

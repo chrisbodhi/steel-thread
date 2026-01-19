@@ -5,15 +5,19 @@ set -e
 apt-get update
 apt-get upgrade -y
 
-# Install Rust (for future builds if needed)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source /root/.cargo/env
-echo 'source /root/.cargo/env' >> /root/.bashrc
+# Install AWS CLI
+echo "Installing AWS CLI..."
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+apt-get install -y unzip
+unzip -q awscliv2.zip
+./aws/install
+rm -rf aws awscliv2.zip
 
-# Install zoo CLI
-curl -fsSL https://zoo.dev/install.sh | sh
-export PATH="/root/.local/bin:$PATH"
-echo 'export PATH="/root/.local/bin:$PATH"' >> /root/.bashrc
+# Install zoo CLI from GitHub releases to system-wide location
+echo "Installing zoo CLI..."
+LATEST_RELEASE=$(curl -s https://api.github.com/repos/KittyCAD/cli/releases/latest | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"//;s/"//')
+curl -L -o /usr/local/bin/zoo "https://github.com/KittyCAD/cli/releases/download/$${LATEST_RELEASE}/zoo-x86_64-unknown-linux-musl"
+chmod +x /usr/local/bin/zoo
 
 # Install Caddy for automatic HTTPS
 apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
@@ -27,7 +31,7 @@ mkdir -p /opt/platerator/kcl
 mkdir -p /opt/platerator/dist
 chown -R root:root /opt/platerator
 
-# Create systemd service
+# Create systemd service that loads zoo token from EnvironmentFile
 cat > /etc/systemd/system/platerator.service <<'SYSTEMD'
 [Unit]
 Description=Platerator Web Service
@@ -43,6 +47,7 @@ Environment="KCL_SRC_DIR=/opt/platerator/kcl"
 Environment="AWS_REGION=${aws_region}"
 Environment="S3_BUCKET_NAME=${s3_bucket_name}"
 Environment="DYNAMODB_TABLE=${dynamodb_table}"
+EnvironmentFile=-/opt/platerator/.env
 ExecStart=/opt/platerator/web
 Restart=always
 RestartSec=5s
@@ -77,17 +82,22 @@ cat > /usr/local/bin/deploy-platerator <<'DEPLOY'
 #!/bin/bash
 set -e
 
-if [ ! -f /tmp/platerator-*.tar.gz ]; then
+# Find the tarball (get the most recent one)
+TARBALL=$(ls -t /tmp/platerator-*.tar.gz 2>/dev/null | head -1)
+
+if [ -z "$TARBALL" ]; then
     echo "Error: No platerator tarball found in /tmp/"
     exit 1
 fi
+
+echo "Found tarball: $TARBALL"
 
 echo "Stopping platerator service..."
 systemctl stop platerator || true
 
 echo "Extracting tarball..."
 cd /tmp
-tar xzf platerator-*.tar.gz
+tar xzf "$TARBALL"
 
 echo "Installing files..."
 cp release/web /opt/platerator/
