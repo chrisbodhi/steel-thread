@@ -20,10 +20,10 @@ pub enum GeneratorError {
     CliError,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum AllErrors {
-    GeneratorError,
-    ValidationError,
+    GeneratorError(String),
+    ValidationError(String),
 }
 
 /// Result of a successful model generation, containing paths to generated files.
@@ -98,16 +98,18 @@ fn copy_kcl_sources(temp_dir: &Path) -> std::io::Result<()> {
 
 pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErrors> {
     if let Err(e) = validation::validate(plate) {
-        eprintln!("oops: {}", e);
-        return Err(AllErrors::ValidationError);
+        let msg = format!("Validation failed: {}", e);
+        eprintln!("{}", msg);
+        return Err(AllErrors::ValidationError(msg));
     }
 
     // Create a temporary directory for this generation request
     let temp_dir = match TempDir::new() {
         Ok(dir) => dir,
         Err(e) => {
-            eprintln!("Failed to create temp directory: {}", e);
-            return Err(AllErrors::GeneratorError);
+            let msg = format!("Failed to create temp directory: {}", e);
+            eprintln!("{}", msg);
+            return Err(AllErrors::GeneratorError(msg));
         }
     };
 
@@ -115,26 +117,30 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
 
     // Copy KCL source files to temp dir
     if let Err(e) = copy_kcl_sources(temp_path) {
-        eprintln!("Failed to copy KCL sources: {}", e);
-        return Err(AllErrors::GeneratorError);
+        let msg = format!("Failed to copy KCL sources from {}: {}", get_kcl_source_dir(), e);
+        eprintln!("{}", msg);
+        return Err(AllErrors::GeneratorError(msg));
     }
 
     // Write params.kcl to temp dir
     if let Err(e) = write_params_file(plate, temp_path) {
-        eprintln!("oops on that param: {}", e);
-        return Err(AllErrors::GeneratorError);
+        let msg = format!("Failed to write params file: {}", e);
+        eprintln!("{}", msg);
+        return Err(AllErrors::GeneratorError(msg));
     }
 
     // Generate STEP file
     if let Err(e) = generate_step_in_dir(plate, temp_path) {
-        eprintln!("oops generating STEP: {:?}", e);
-        return Err(AllErrors::GeneratorError);
+        let msg = format!("Failed to generate STEP file: {:?}", e);
+        eprintln!("{}", msg);
+        return Err(AllErrors::GeneratorError(msg));
     }
 
     // Generate glTF file
     if let Err(e) = generate_gltf_in_dir(plate, temp_path) {
-        eprintln!("oops generating glTF: {:?}", e);
-        return Err(AllErrors::GeneratorError);
+        let msg = format!("Failed to generate glTF file: {:?}", e);
+        eprintln!("{}", msg);
+        return Err(AllErrors::GeneratorError(msg));
     }
 
     let step_file = temp_path.join("output.step");
@@ -256,7 +262,12 @@ mod tests {
         let result = generate_model(&plate);
 
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), AllErrors::ValidationError);
+        match result.unwrap_err() {
+            AllErrors::ValidationError(msg) => {
+                assert!(msg.contains("Validation failed"));
+            }
+            _ => panic!("Expected ValidationError"),
+        }
     }
 
     #[test]

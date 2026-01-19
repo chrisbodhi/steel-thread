@@ -86,12 +86,8 @@ pub async fn generate_plate_model(
         Err(e) => {
             tracing::error!("generation error: {:?}", e);
             let error_msg = match e {
-                parametric::AllErrors::ValidationError => {
-                    "Validation failed. Please check your plate configuration.".to_string()
-                }
-                parametric::AllErrors::GeneratorError => {
-                    "Failed to generate model files. Please ensure zoo CLI is installed and authenticated.".to_string()
-                }
+                parametric::AllErrors::ValidationError(msg) => msg,
+                parametric::AllErrors::GeneratorError(msg) => msg,
             };
             let res = ErrorResponse {
                 success: false,

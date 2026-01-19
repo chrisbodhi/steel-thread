@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Actuator Plate Generator", () => {
+test.describe("Platerator", () => {
   test("generates and downloads a plate model", async ({ page }) => {
     await page.goto("/");
 
     // Verify we're on the right page
     await expect(page.locator('[data-slot="card-title"]')).toContainText(
-      "Actuator plate picker"
+      "Platerator"
     );
 
     // Fill in the form with valid values

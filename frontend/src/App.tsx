@@ -99,10 +99,10 @@ export function App() {
       <Card>
         <CardHeader className="gap-4">
           <CardTitle className="text-3xl font-bold">
-            Actuator plate picker
+            Platerator
           </CardTitle>
           <CardDescription>
-            Configure your plate specifications to receive a STEP file.
+            Configure your actuator plate specifications to generate STEP and glTF files.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">
