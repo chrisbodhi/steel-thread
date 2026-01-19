@@ -1,6 +1,6 @@
 # Frontend
 
-React SPA for the actuator plate configurator.
+React SPA for **Platerator**, an actuator plate configurator.
 
 See the [root README](../README.md) for development workflow and commands.
 

@@ -4,7 +4,7 @@ This document provides context and guidelines for AI assistants (like Claude) wo
 
 ## Project Overview
 
-This is an actuator plate configuration application with:
+**Platerator** is an actuator plate configuration application with:
 - **Backend**: Axum-based REST API server (Rust)
 - **Frontend**: React SPA with Bun (TypeScript)
 
