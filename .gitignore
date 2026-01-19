@@ -6,9 +6,11 @@ crates/parametric/src/params.kcl
 output_dir/output.step
 output_dir/*.gltf
 crates/web/dist
+platerator-*.tar.gz
 playwright-report
 test-results
 
 *.tfstate
 *.tfstate.backup
+*.tfplan
 .terraform/
