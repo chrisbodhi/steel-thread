@@ -23,6 +23,9 @@ just logs                 # Tail service logs
 just ssh                  # SSH to Lightsail instance
 just info                 # Show all terraform outputs (IP, URLs)
 
+# Token Management
+just deploy-zoo-token     # Deploy zoo token to instance (after rotation)
+
 # Cleanup
 just tf-destroy           # Destroy all AWS infrastructure
 ```
@@ -125,8 +128,8 @@ This reads your local zoo token from `~/.config/zoo/hosts.toml` and stores it in
 # Get the public IP
 LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip)
 
-# Watch the setup progress
-ssh root@$LIGHTSAIL_IP 'tail -f /var/log/cloud-init-output.log'
+# Watch the setup progress (connect as ubuntu user)
+ssh ubuntu@$LIGHTSAIL_IP 'tail -f /var/log/cloud-init-output.log'
 ```
 
 Wait for the message: **"Lightsail instance setup complete!"**
@@ -502,7 +505,15 @@ chrono = "0.4"
 
 GitHub Actions automatically builds the Linux binary when you push to the main branch. The build artifacts (tarball with compiled binary + frontend) are stored as release artifacts for you to download and deploy locally.
 
+**Build Configuration**:
+- Builds on Ubuntu 22.04 (for GLIBC 2.35 compatibility with Lightsail instance)
+- Runs tests and clippy linting before building
+- Packages binary + frontend dist + KCL files into tarball
+- Artifacts retained for 30 days
+
 **No automatic deployment to production**—credentials stay on your machine using `just deploy`.
+
+**Deployment Safety**: The deployment script will error if multiple tarballs exist on the server, preventing accidental deployment of the wrong version.
 
 ## Monitoring
 
@@ -517,7 +528,7 @@ journalctl -u platerator -f
 
 # Or from your machine
 LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip)
-ssh root@$LIGHTSAIL_IP journalctl -u platerator -n 100
+ssh ubuntu@$LIGHTSAIL_IP 'sudo journalctl -u platerator -n 100'
 ```
 
 ### CloudWatch Dashboard
@@ -537,7 +548,7 @@ just status
 
 # Or manually check
 LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip)
-ssh root@$LIGHTSAIL_IP systemctl status platerator
+ssh ubuntu@$LIGHTSAIL_IP 'systemctl status platerator'
 ```
 
 ## Troubleshooting
@@ -556,9 +567,13 @@ journalctl -u platerator -n 50
 ls -lh /opt/platerator/
 ```
 
-3. Verify zoo token was stored:
+3. Verify zoo token was stored and deployed:
 ```bash
-aws secretsmanager get-secret-value --secret-id platerator/zoo-token
+# Check Secrets Manager
+aws secretsmanager get-secret-value --secret-id platerator/zoo-token --region us-east-1
+
+# Check it's on the instance
+ssh ubuntu@YOUR_IP 'sudo cat /opt/platerator/.env'
 ```
 
 ### Instance is unreachable (SSH fails)
@@ -567,7 +582,7 @@ The instance may still be setting up. Wait 5 minutes after `terraform apply`:
 
 ```bash
 LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip)
-ssh root@$LIGHTSAIL_IP 'tail -f /var/log/cloud-init-output.log'
+ssh ubuntu@$LIGHTSAIL_IP 'tail -f /var/log/cloud-init-output.log'
 ```
 
 ### Files not caching
@@ -602,7 +617,7 @@ aws s3api get-bucket-lifecycle-configuration --bucket platerator-generated-files
 3. Check Lightsail bandwidth usage:
 ```bash
 LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip)
-ssh root@$LIGHTSAIL_IP 'vnstat'  # If installed, shows network stats
+ssh ubuntu@$LIGHTSAIL_IP 'vnstat'  # If installed, shows network stats
 ```
 
 ## Destroying Infrastructure

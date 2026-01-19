@@ -38,18 +38,21 @@ just tf-apply
 
 # Store your zoo token in AWS Secrets Manager
 just set-zoo-token
+
+# Deploy the token to the Lightsail instance
+just deploy-zoo-token
 ```
 
 **Cost**: $3.50/month for Lightsail + ~$1-2 for S3/DynamoDB = **~$5/month total**
 
 ### Step 2: Wait for Instance Setup
 
-The Lightsail instance needs ~5 minutes to install Rust, zoo CLI, and Caddy.
+The Lightsail instance needs ~5 minutes to install AWS CLI, zoo CLI, and Caddy.
 
 Check progress:
 ```bash
 LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip)
-ssh root@$LIGHTSAIL_IP 'tail -f /var/log/cloud-init-output.log'
+ssh ubuntu@$LIGHTSAIL_IP 'tail -f /var/log/cloud-init-output.log'
 ```
 
 Wait for: "Lightsail instance setup complete!"
@@ -206,10 +209,14 @@ With AWS free tier (first year): **~$3-4/month**
 - CloudWatch logs + dashboard
 
 **On the Instance**:
-- Rust toolchain
-- zoo CLI
+- AWS CLI (for accessing Secrets Manager)
+- zoo CLI (system-wide in /usr/local/bin)
 - Caddy web server (automatic HTTP)
 - systemd service (auto-restart)
+
+**SSH Access**:
+- Your SSH public key is automatically configured via Terraform
+- Connect as `ubuntu` user (not root)
 
 ---
 

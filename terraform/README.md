@@ -7,6 +7,9 @@ This Terraform configuration creates a cost-optimized AWS infrastructure for Pla
 ### Resources
 
 - **Lightsail Instance** - Ubuntu 22.04 nano ($3.50/month) running the Rust/React app
+  - SSH key automatically configured from `~/.ssh/id_rsa.pub`
+  - Access as `ubuntu` user (not root)
+  - AWS region auto-set to `us-east-1`
 - **Static IP** - Fixed public IP for the instance
 - **S3 Bucket** - Generated STEP/glTF file storage with lifecycle policies
 - **DynamoDB Table** - Plate configuration cache (on-demand billing)
@@ -151,10 +154,11 @@ Check if AWS resources were modified outside Terraform (manual changes).
 ## Next Steps
 
 1. ✅ Infrastructure ready
-2. Run `just set-zoo-token` to store zoo CLI credentials
-3. Wait for Lightsail instance to finish setup (~5 minutes):
+2. Run `just set-zoo-token` to store zoo CLI credentials in Secrets Manager
+3. Run `just deploy-zoo-token` to deploy the token to the instance
+4. Wait for Lightsail instance to finish setup (~5 minutes):
    ```bash
-   ssh root@<public-ip> 'tail -f /var/log/cloud-init-output.log'
+   ssh ubuntu@<public-ip> 'tail -f /var/log/cloud-init-output.log'
    ```
 4. Deploy the application locally (credentials stay on your machine):
    ```bash
