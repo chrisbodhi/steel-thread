@@ -133,15 +133,32 @@ See [QUICKSTART.md](./QUICKSTART.md) for step-by-step guide.
 
 
 
-## API Endpoints
+## API Documentation
+
+### Interactive API Documentation
+
+Platerator includes interactive OpenAPI (Swagger) documentation:
+
+**Development**: http://localhost:3030/api/docs
+**Production**: https://your-domain.com/api/docs
+
+The Swagger UI provides:
+- Complete API endpoint documentation
+- Request/response schemas with examples
+- Interactive "Try it out" functionality
+- Parameter descriptions and validation rules
+
+### API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
 | POST | `/api/validate` | Validate plate parameters without generating files |
 | POST | `/api/generate` | Generate STEP and glTF model files |
-| GET | `/api/download/step` | Download generated STEP file |
-| GET | `/api/download/gltf` | Download generated glTF file |
+| GET | `/api/download/step/{session_id}` | Download generated STEP file |
+| GET | `/api/download/gltf/{session_id}` | Download generated glTF file |
+| GET | `/api/docs` | Interactive Swagger UI documentation |
+| GET | `/api/openapi.json` | OpenAPI specification (JSON) |
 
 ## Documentation
 

@@ -123,6 +123,15 @@ The server runs on port 3030 and serves:
 
 ## REST API
 
+### OpenAPI Documentation
+
+The API is fully documented with OpenAPI 3.0 (formerly Swagger):
+
+- **Swagger UI**: http://localhost:3030/api/docs (interactive documentation)
+- **OpenAPI spec**: http://localhost:3030/api/openapi.json (machine-readable)
+
+Documentation is generated using `utoipa` and `utoipa-swagger-ui` crates.
+
 ### Endpoints
 
 | Method | Path | Description |
@@ -130,8 +139,10 @@ The server runs on port 3030 and serves:
 | GET | `/api/health` | Health check |
 | POST | `/api/validate` | Validate plate parameters without generating files |
 | POST | `/api/generate` | Generate STEP and glTF model files |
-| GET | `/api/download/step` | Download generated STEP file |
-| GET | `/api/download/gltf` | Download generated glTF file |
+| GET | `/api/download/step/{session_id}` | Download generated STEP file |
+| GET | `/api/download/gltf/{session_id}` | Download generated glTF file |
+| GET | `/api/docs` | Interactive Swagger UI documentation |
+| GET | `/api/openapi.json` | OpenAPI specification (JSON) |
 
 ## Frontend Development
 
@@ -205,6 +216,47 @@ cargo test -p web                   # API tests only
 
 See [TESTING.md](./TESTING.md) for detailed testing guide.
 
+## Adding New API Endpoints
+
+When adding new API endpoints, follow these steps:
+
+1. **Define request/response types** with `ToSchema` derive:
+   ```rust
+   use utoipa::ToSchema;
+
+   #[derive(Serialize, Deserialize, ToSchema)]
+   struct MyRequest {
+       /// Field description (appears in OpenAPI docs)
+       field: String,
+   }
+   ```
+
+2. **Add endpoint handler** with `#[utoipa::path]` annotation:
+   ```rust
+   #[utoipa::path(
+       post,
+       path = "/api/my-endpoint",
+       tag = "my-tag",
+       request_body = MyRequest,
+       responses(
+           (status = 200, description = "Success", body = MyResponse),
+           (status = 400, description = "Invalid request", body = ErrorResponse)
+       )
+   )]
+   async fn my_handler(Json(payload): Json<MyRequest>) -> impl IntoResponse {
+       // Implementation
+   }
+   ```
+
+3. **Register in OpenAPI doc** (`ApiDoc` struct):
+   - Add to `paths()` list
+   - Add new schemas to `components(schemas())`
+   - Add new tag to `tags()` if needed
+
+4. **Add route** in `create_router()` function
+
+The OpenAPI documentation will automatically update and be visible at `/api/docs`.
+
 ## Important Guidelines
 
 ### DO
@@ -214,6 +266,8 @@ See [TESTING.md](./TESTING.md) for detailed testing guide.
 - Return detailed error messages in API responses
 - Keep validation crate `no_std` compatible
 - Build frontend before deploying (`just build`)
+- Add OpenAPI documentation (`#[utoipa::path]`) to all new API endpoints
+- Document all API request/response types with `ToSchema` derive
 
 ### DON'T
 - Don't run Bun in production - serve static files from Rust

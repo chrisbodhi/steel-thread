@@ -13,7 +13,47 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
+use utoipa::OpenApi;
+use utoipa::ToSchema;
+use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
+
+/// OpenAPI documentation structure
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        health,
+        validate_plate,
+        generate_plate_model,
+        download_step,
+        download_gltf,
+    ),
+    components(
+        schemas(
+            ActuatorPlate,
+            domain::Millimeters,
+            OkResponse,
+            ValidationSuccessResponse,
+            ValidationErrorResponse,
+            GenerateSuccessResponse,
+            ErrorResponse,
+        )
+    ),
+    tags(
+        (name = "health", description = "Health check endpoints"),
+        (name = "validation", description = "Plate parameter validation endpoints"),
+        (name = "generation", description = "Model generation and download endpoints"),
+    ),
+    info(
+        title = "Platerator API",
+        version = "1.0.0",
+        description = "REST API for generating actuator plate STEP and glTF model files",
+        contact(
+            name = "Platerator Team"
+        )
+    )
+)]
+pub struct ApiDoc;
 
 /// Shared application state for storing generation results
 pub type AppState = Arc<RwLock<HashMap<String, GenerationResult>>>;
@@ -44,21 +84,51 @@ pub fn create_router(state: AppState) -> Router {
     // Serve static files from dist/, fallback to index.html for SPA routing
     let serve_dir = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
 
-    Router::new()
+    // Create API routes
+    let api_routes = Router::new()
         .route("/api/health", get(health))
         .route("/api/validate", post(validate_plate))
         .route("/api/generate", post(generate_plate_model))
         .route("/api/download/step/{session_id}", get(download_step))
         .route("/api/download/gltf/{session_id}", get(download_gltf))
+        .with_state(state);
+
+    // Merge with Swagger UI
+    api_routes
+        .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
         .fallback_service(serve_dir)
-        .with_state(state)
 }
 
+/// Health check endpoint
+///
+/// Returns a simple OK response to verify the API is running.
+#[utoipa::path(
+    get,
+    path = "/api/health",
+    tag = "health",
+    responses(
+        (status = 200, description = "Service is healthy", body = OkResponse)
+    )
+)]
 async fn health() -> impl IntoResponse {
     let res = OkResponse { ok: true };
     (StatusCode::OK, Json(res)).into_response()
 }
 
+/// Validate actuator plate parameters
+///
+/// Validates the actuator plate configuration without generating model files.
+/// Useful for client-side validation before submitting a generation request.
+#[utoipa::path(
+    post,
+    path = "/api/validate",
+    tag = "validation",
+    request_body = ActuatorPlate,
+    responses(
+        (status = 200, description = "Plate parameters are valid", body = ValidationSuccessResponse),
+        (status = 400, description = "Plate parameters are invalid", body = ValidationErrorResponse)
+    )
+)]
 async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
     match validation::validate(&payload) {
         Ok(()) => {
@@ -78,6 +148,20 @@ async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse
     }
 }
 
+/// Generate actuator plate model files
+///
+/// Generates STEP and glTF model files based on the provided actuator plate configuration.
+/// Returns download URLs for the generated files along with a session ID for retrieval.
+#[utoipa::path(
+    post,
+    path = "/api/generate",
+    tag = "generation",
+    request_body = ActuatorPlate,
+    responses(
+        (status = 200, description = "Model files generated successfully", body = GenerateSuccessResponse),
+        (status = 400, description = "Invalid plate configuration", body = ErrorResponse)
+    )
+)]
 pub async fn generate_plate_model(
     State(state): State<AppState>,
     Json(payload): Json<ActuatorPlate>,
@@ -119,6 +203,22 @@ pub async fn generate_plate_model(
     }
 }
 
+/// Download STEP file
+///
+/// Downloads the generated STEP model file for a given session ID.
+/// The session ID is obtained from the generate endpoint response.
+#[utoipa::path(
+    get,
+    path = "/api/download/step/{session_id}",
+    tag = "generation",
+    params(
+        ("session_id" = String, Path, description = "Session ID from the generate endpoint")
+    ),
+    responses(
+        (status = 200, description = "STEP file downloaded successfully", content_type = "application/STEP"),
+        (status = 404, description = "Session not found or file not available", body = ErrorResponse)
+    )
+)]
 async fn download_step(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
@@ -157,6 +257,22 @@ async fn download_step(
     }
 }
 
+/// Download glTF file
+///
+/// Downloads the generated glTF model file for a given session ID.
+/// The session ID is obtained from the generate endpoint response.
+#[utoipa::path(
+    get,
+    path = "/api/download/gltf/{session_id}",
+    tag = "generation",
+    params(
+        ("session_id" = String, Path, description = "Session ID from the generate endpoint")
+    ),
+    responses(
+        (status = 200, description = "glTF file downloaded successfully", content_type = "model/gltf+json"),
+        (status = 404, description = "Session not found or file not available", body = ErrorResponse)
+    )
+)]
 async fn download_gltf(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
@@ -195,35 +311,53 @@ async fn download_gltf(
     }
 }
 
-#[derive(Serialize)]
+/// Health check response
+#[derive(Serialize, ToSchema)]
 struct OkResponse {
+    /// Always true for successful health checks
     ok: bool,
 }
 
-#[derive(Serialize)]
+/// Successful model generation response
+#[derive(Serialize, ToSchema)]
 struct GenerateSuccessResponse {
+    /// Always true for successful generation
     success: bool,
+    /// Human-readable success message
     message: String,
+    /// URL to download the STEP file
     download_url: String,
+    /// URL to download the glTF file
     gltf_url: String,
+    /// Session ID for retrieving the generated files
     session_id: String,
 }
 
-#[derive(Serialize)]
+/// Error response
+#[derive(Serialize, ToSchema)]
 struct ErrorResponse {
+    /// Always false for error responses
     success: bool,
+    /// Indicates if the error was understood
     got_it: bool,
+    /// List of error messages
     errors: Vec<String>,
 }
 
-#[derive(Serialize)]
+/// Successful validation response
+#[derive(Serialize, ToSchema)]
 struct ValidationSuccessResponse {
+    /// Always true for valid plates
     valid: bool,
+    /// Human-readable success message
     message: String,
 }
 
-#[derive(Serialize)]
+/// Validation error response
+#[derive(Serialize, ToSchema)]
 struct ValidationErrorResponse {
+    /// Always false for invalid plates
     valid: bool,
+    /// List of validation error messages
     errors: Vec<String>,
 }

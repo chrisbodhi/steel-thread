@@ -1,9 +1,11 @@
-#![no_std]
+#![cfg_attr(not(feature = "openapi"), no_std)]
 
 use serde::{Deserialize, Serialize};
 
 /// A type-safe wrapper for millimeter measurements.
 #[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "openapi", schema(example = 60))]
 pub struct Millimeters(pub u16);
 
 /// Configuration for an actuator plate assembly.
@@ -11,6 +13,7 @@ pub struct Millimeters(pub u16);
 /// Defines the physical dimensions and parameters for manufacturing
 /// a custom actuator plate with mounting bolts and actuator pins.
 #[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 pub struct ActuatorPlate {
     /// Distance between mounting bolt centers (in millimeters).
     ///
