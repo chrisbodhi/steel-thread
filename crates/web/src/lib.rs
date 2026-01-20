@@ -46,6 +46,7 @@ pub fn create_router(state: AppState) -> Router {
 
     Router::new()
         .route("/api/health", get(health))
+        .route("/api/validate", post(validate_plate))
         .route("/api/generate", post(generate_plate_model))
         .route("/api/download/step/{session_id}", get(download_step))
         .route("/api/download/gltf/{session_id}", get(download_gltf))
@@ -56,6 +57,25 @@ pub fn create_router(state: AppState) -> Router {
 async fn health() -> impl IntoResponse {
     let res = OkResponse { ok: true };
     (StatusCode::OK, Json(res)).into_response()
+}
+
+async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
+    match validation::validate(&payload) {
+        Ok(()) => {
+            let res = ValidationSuccessResponse {
+                valid: true,
+                message: "Actuator plate parameters are valid".to_string(),
+            };
+            (StatusCode::OK, Json(res)).into_response()
+        }
+        Err(e) => {
+            let res = ValidationErrorResponse {
+                valid: false,
+                errors: vec![e.to_string()],
+            };
+            (StatusCode::BAD_REQUEST, Json(res)).into_response()
+        }
+    }
 }
 
 pub async fn generate_plate_model(
@@ -193,5 +213,17 @@ struct GenerateSuccessResponse {
 struct ErrorResponse {
     success: bool,
     got_it: bool,
+    errors: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct ValidationSuccessResponse {
+    valid: bool,
+    message: String,
+}
+
+#[derive(Serialize)]
+struct ValidationErrorResponse {
+    valid: bool,
     errors: Vec<String>,
 }
