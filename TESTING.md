@@ -7,15 +7,15 @@ This project has comprehensive test coverage across multiple layers.
 ```
 crates/
 ├── validation/
-│   └── src/lib.rs              # Unit tests for validation logic (15 tests)
+│   └── src/lib.rs              # Unit tests for validation logic (18 tests)
 ├── parametric/
-│   └── src/lib.rs              # Parametric generation tests (4 fast + 1 ignored)
+│   └── src/lib.rs              # Parametric generation tests (4 fast + 3 ignored)
 └── web/
     └── tests/
-        └── api_tests.rs        # Integration tests for REST API (5 tests)
+        └── api_tests.rs        # Integration tests for REST API (6 tests)
 ```
 
-**Total: 24 fast tests + 1 ignored integration test**
+**Total: 28 fast tests + 3 ignored integration tests**
 
 ## Running Tests
 
@@ -24,9 +24,9 @@ crates/
 cargo test
 
 # Run tests for a specific crate
-cargo test -p validation      # Validation only (15 tests)
-cargo test -p parametric      # Parametric tests (4 fast tests, skips zoo CLI test)
-cargo test -p web             # API tests only (5 tests)
+cargo test -p validation      # Validation only (18 tests)
+cargo test -p parametric      # Parametric tests (4 fast tests, skips 3 zoo CLI tests)
+cargo test -p web             # API tests only (6 tests)
 
 # Run specific test by name
 cargo test test_validate_bolt_spacing_valid
