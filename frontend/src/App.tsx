@@ -92,8 +92,8 @@ export function App() {
   };
 
   return (
-    <div className="container mx-auto p-8 text-center relative z-10">
-      <div className="absolute top-11 right-11">
+    <div className="container mx-auto p-4 lg:p-8 text-center relative z-10">
+      <div className="absolute top-4 right-4 lg:top-11 lg:right-11">
         <ThemePicker />
       </div>
       <Card>
@@ -107,7 +107,7 @@ export function App() {
         </CardHeader>
         <CardContent className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 min-w-0">
-            <div className="w-full aspect-square min-h-96">
+            <div className="w-full aspect-square min-h-64 lg:min-h-96">
               {modelSrc ? (
                 <ModelViewer src={modelSrc} alt="Actuator plate model" />
               ) : (
@@ -127,7 +127,7 @@ export function App() {
           </div>
           <div className="flex-1 min-w-0">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 auto-rows-auto gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-auto gap-4">
                 <Combined
                   forProp="boltSpacing"
                   name="Bolt Spacing"
