@@ -138,6 +138,7 @@ See [QUICKSTART.md](./QUICKSTART.md) for step-by-step guide.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
+| POST | `/api/validate` | Validate plate parameters without generating files |
 | POST | `/api/generate` | Generate STEP and glTF model files |
 | GET | `/api/download/step` | Download generated STEP file |
 | GET | `/api/download/gltf` | Download generated glTF file |

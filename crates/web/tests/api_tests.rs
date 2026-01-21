@@ -120,3 +120,110 @@ async fn test_generate_endpoint_valid_plate() {
 
     // No cleanup needed - temp files are automatically cleaned up
 }
+
+#[tokio::test]
+async fn test_validate_endpoint_valid_plate() {
+    let app = create_test_router();
+
+    let plate = ActuatorPlate {
+        bolt_spacing: Millimeters(60),
+        bolt_diameter: Millimeters(10),
+        bracket_height: Millimeters(40),
+        bracket_width: Millimeters(30),
+        pin_diameter: Millimeters(10),
+        pin_count: 6,
+        plate_thickness: Millimeters(8),
+    };
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/validate")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&plate).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["valid"], true);
+    assert!(json.get("message").is_some());
+}
+
+#[tokio::test]
+async fn test_validate_endpoint_invalid_bolt_spacing() {
+    let app = create_test_router();
+
+    let plate = ActuatorPlate {
+        bolt_spacing: Millimeters(0), // Invalid!
+        bolt_diameter: Millimeters(10),
+        bracket_height: Millimeters(40),
+        bracket_width: Millimeters(30),
+        pin_diameter: Millimeters(10),
+        pin_count: 6,
+        plate_thickness: Millimeters(8),
+    };
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/validate")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&plate).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["valid"], false);
+    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(json["errors"][0]
+        .as_str()
+        .unwrap()
+        .contains("bolt spacing"));
+}
+
+#[tokio::test]
+async fn test_validate_endpoint_invalid_pin_count() {
+    let app = create_test_router();
+
+    let plate = ActuatorPlate {
+        bolt_spacing: Millimeters(60),
+        bolt_diameter: Millimeters(10),
+        bracket_height: Millimeters(40),
+        bracket_width: Millimeters(30),
+        pin_diameter: Millimeters(10),
+        pin_count: 13, // Invalid! Max is 12
+        plate_thickness: Millimeters(8),
+    };
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/validate")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&plate).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["valid"], false);
+    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(json["errors"][0].as_str().unwrap().contains("pin count"));
+}
