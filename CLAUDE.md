@@ -121,6 +121,55 @@ The server runs on port 3030 and serves:
 - API endpoints at `/api/*`
 - Frontend at all other routes
 
+## CI/CD
+
+### GitHub Actions Workflow
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+- **Test job**: Runs all tests on Ubuntu 22.04
+- **Build job**: Builds the release binary for deployment to Lightsail
+
+### IMPORTANT: Cache Busting When Adding Dependencies
+
+**When adding new Rust crates**, you must bump the cache version in `.github/workflows/build.yml` to prevent cache incompatibility issues.
+
+#### Why This Matters
+
+GitHub Actions caches the `target/` directory and cargo registry to speed up builds. When you add new dependencies (especially large ones like `utoipa`, AWS SDK crates, etc.), the cached build artifacts may become incompatible, causing mysterious build failures in CI even though the code compiles locally.
+
+#### How to Bump the Cache
+
+In `.github/workflows/build.yml`, update the cache version prefix in **both** the test and build jobs:
+
+```yaml
+# Change this:
+key: ${{ runner.os }}-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
+restore-keys: |
+  ${{ runner.os }}-cargo-v2-
+
+# To this (increment the version number):
+key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
+restore-keys: |
+  ${{ runner.os }}-cargo-v3-
+```
+
+Do this for both cache blocks:
+1. The test job cache (~line 20)
+2. The build job cache (~line 49)
+
+#### When to Bump
+
+Bump the cache version (v2 → v3 → v4, etc.) when:
+- Adding new crate dependencies to any `Cargo.toml`
+- Upgrading major versions of existing dependencies
+- CI build fails but local build succeeds
+- You see "error: failed to select a version" or similar dependency resolution errors in CI
+
+#### Example
+
+See commit `8db1195` for a real example of fixing a cache incompatibility issue after adding utoipa dependencies.
+
 ## REST API
 
 ### OpenAPI Documentation
@@ -268,6 +317,7 @@ The OpenAPI documentation will automatically update and be visible at `/api/docs
 - Build frontend before deploying (`just build`)
 - Add OpenAPI documentation (`#[utoipa::path]`) to all new API endpoints
 - Document all API request/response types with `ToSchema` derive
+- **Bump GitHub Actions cache version** when adding new Rust dependencies (see CI/CD section)
 
 ### DON'T
 - Don't run Bun in production - serve static files from Rust
@@ -284,3 +334,4 @@ When implementing new features, consider:
 2. Is the validation logic in the shared validation crate?
 3. Does the frontend need to be updated?
 4. Have I written tests for this feature?
+5. **If adding Rust dependencies**: Did I bump the GitHub Actions cache version in `.github/workflows/build.yml`?
