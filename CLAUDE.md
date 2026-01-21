@@ -200,11 +200,11 @@ All validators return `Result<(), PlateValidationError>`.
 
 ## Testing
 
-**Current test count: 25 fast tests + 3 ignored integration tests**
+**Current test count: 28 fast tests + 3 ignored integration tests**
 - 18 validation unit tests
 - 4 parametric unit tests
 - 3 parametric integration tests (ignored - require zoo CLI)
-- 3 REST API integration tests
+- 6 REST API integration tests
 
 ```bash
 just test                           # All fast tests (default)
