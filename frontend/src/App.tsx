@@ -105,7 +105,7 @@ export function App() {
             Configure your actuator plate specifications to generate STEP and glTF files.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4">
+        <CardContent className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 min-w-0">
             <div className="w-full aspect-square min-h-96">
               {modelSrc ? (
