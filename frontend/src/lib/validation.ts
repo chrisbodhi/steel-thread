@@ -31,9 +31,19 @@ export async function initValidation(): Promise<void> {
     return wasmInitPromise;
   }
 
-  wasmInitPromise = init().then(() => {
-    wasmInitialized = true;
-  });
+  wasmInitPromise = (async () => {
+    try {
+      // Try to load WASM from the expected locations
+      // In development: /wasm-validation/validation_bg.wasm
+      // In production: /wasm-validation/validation_bg.wasm
+      const wasmUrl = '/wasm-validation/validation_bg.wasm';
+      await init(wasmUrl);
+      wasmInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize WASM validation module:', error);
+      throw error;
+    }
+  })();
 
   return wasmInitPromise;
 }

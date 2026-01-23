@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import plugin from "bun-plugin-tailwind";
 import { existsSync } from "fs";
-import { rm } from "fs/promises";
+import { rm, cp } from "fs/promises";
 import path from "path";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
@@ -146,5 +146,17 @@ const outputTable = result.outputs.map(output => ({
 
 console.table(outputTable);
 const buildTime = (end - start).toFixed(2);
+
+// Copy WASM files to output directory
+console.log("📦 Copying WASM validation module...");
+const wasmSrc = path.join(process.cwd(), "src", "wasm-validation");
+const wasmDest = path.join(outdir, "wasm-validation");
+
+if (existsSync(wasmSrc)) {
+  await cp(wasmSrc, wasmDest, { recursive: true });
+  console.log("✅ WASM module copied");
+} else {
+  console.warn("⚠️  WASM validation module not found. Run 'just build-wasm' first.");
+}
 
 console.log(`\n✅ Build completed in ${buildTime}ms\n`);
