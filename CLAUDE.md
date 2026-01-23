@@ -23,6 +23,20 @@ In production, the Rust server serves both the API and the static frontend files
 - **React**: 19
 - **TailwindCSS**: 4.1
 - **shadcn/ui**: Component library (new-york style)
+- **WebAssembly**: Shared validation logic compiled from Rust
+
+### Prerequisites
+
+- **Rust**: Latest stable
+- **Bun**: 1.0+ (for frontend development)
+- **wasm-pack**: 0.14.0+ (for building WASM modules)
+  ```bash
+  cargo install wasm-pack
+  ```
+- **Just**: Command runner (optional but recommended)
+  ```bash
+  cargo install just
+  ```
 
 ## Architecture
 
@@ -72,11 +86,13 @@ The Bun dev server proxies `/api/*` requests to the Rust backend.
 
 **Just** - Project orchestration and build pipeline
 ```bash
-just dev            # Start both API and frontend servers
-just dev-frontend   # Start only the frontend dev server
+just dev            # Start both API and frontend servers (builds WASM first)
+just dev-frontend   # Start only the frontend dev server (builds WASM first)
+just build-wasm     # Build WASM validation module for frontend
 just build-release  # Build frontend + Rust for production
 just test           # Run all tests once
-just clean          # Clean build artifacts
+just clean          # Clean build artifacts (including WASM)
+just stop           # Stop any running dev servers
 ```
 
 **Bacon** - Interactive Rust development with file watching
@@ -98,6 +114,41 @@ bacon run-long
 # Terminal 2: Bun frontend with HMR
 cd frontend && bun dev
 ```
+
+### Troubleshooting
+
+**Port Already in Use Error**
+
+If you see "Address already in use" when running `just dev`:
+
+```bash
+# Stop any running dev servers
+just stop
+
+# Or manually check what's using the ports
+lsof -i :3030  # API server port
+lsof -i :3000  # Frontend dev server port
+
+# Then start again
+just dev
+```
+
+**WASM Build Issues**
+
+If wasm-pack fails to build:
+
+1. Ensure you have wasm-pack 0.14.0+:
+   ```bash
+   wasm-pack --version
+   cargo install wasm-pack --force  # Update if needed
+   ```
+
+2. The WASM module is built automatically when running `just dev` or `just build`
+
+3. To manually rebuild just the WASM module:
+   ```bash
+   just build-wasm
+   ```
 
 ## Build & Deploy
 

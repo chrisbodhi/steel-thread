@@ -1,5 +1,6 @@
 /target
 frontend/node_modules/
+frontend/src/wasm-validation/
 crates/parametric/src/params.kcl
 .DS_Store
 
