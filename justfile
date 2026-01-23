@@ -1,5 +1,5 @@
 # Development: run both servers
-dev: build-wasm
+dev: stop build-wasm
     #!/usr/bin/env bash
     echo "Starting API and frontend servers..."
     echo "API will run on http://localhost:3030"
@@ -10,7 +10,7 @@ dev: build-wasm
     wait
 
 # Run just the Bun frontend dev server
-dev-frontend: build-wasm
+dev-frontend: stop build-wasm
     cd frontend && bun dev
 
 # Build WASM validation module for frontend
@@ -40,8 +40,14 @@ clean:
 stop:
     #!/usr/bin/env bash
     echo "Stopping any running dev servers..."
-    pkill -f "cargo run -p web" || true
-    pkill -f "bun.*dev" || true
+    # Kill by process name
+    pkill -f "cargo run -p web" 2>/dev/null || true
+    pkill -f "bun.*dev" 2>/dev/null || true
+    pkill -f "target/debug/web" 2>/dev/null || true
+    # Kill by port (macOS)
+    lsof -ti:3030 | xargs kill -9 2>/dev/null || true
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    sleep 1
     echo "Servers stopped"
 
 # AWS Deployment Commands
