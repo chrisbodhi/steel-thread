@@ -34,6 +34,15 @@ clean:
     cargo clean
     rm -rf crates/web/dist
     rm -rf frontend/node_modules/.cache
+    rm -rf frontend/src/wasm-validation
+
+# Stop any running dev servers
+stop:
+    #!/usr/bin/env bash
+    echo "Stopping any running dev servers..."
+    pkill -f "cargo run -p web" || true
+    pkill -f "bun.*dev" || true
+    echo "Servers stopped"
 
 # AWS Deployment Commands
 

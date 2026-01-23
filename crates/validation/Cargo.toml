@@ -2,6 +2,9 @@
 name = "validation"
 version = "0.1.0"
 edition = "2021"
+description = "Shared validation logic for actuator plate parameters (no_std compatible, works in Rust and WebAssembly)"
+repository = "https://github.com/chrisbodhi/steel-thread"
+license = "MIT OR Apache-2.0"
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
