@@ -30,11 +30,13 @@ function Combined({
   name,
   defaultValue = "10",
   validator,
+  onValidationChange,
 }: {
   forProp: string;
   name: string;
   defaultValue?: string;
   validator: (value: number) => Promise<ValidationResult>;
+  onValidationChange?: (fieldName: string, isValid: boolean) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
@@ -46,11 +48,12 @@ function Combined({
       if (value && touched) {
         const result = await validator(Number(value));
         setValidationResult(result);
+        onValidationChange?.(forProp, result.valid);
       }
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [value, validator, touched]);
+  }, [value, validator, touched, forProp, onValidationChange]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
@@ -64,6 +67,7 @@ function Combined({
     if (value) {
       const result = await validator(Number(value));
       setValidationResult(result);
+      onValidationChange?.(forProp, result.valid);
     }
   };
 
@@ -96,6 +100,24 @@ export function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [modelSrc, setModelSrc] = useState<string | null>(null);
+  const [fieldValidationState, setFieldValidationState] = useState<Record<string, boolean>>({
+    boltSpacing: true,
+    boltDiameter: true,
+    bracketHeight: true,
+    bracketWidth: true,
+    pinDiameter: true,
+    pinCount: true,
+    plateThickness: true,
+  });
+
+  const handleValidationChange = (fieldName: string, isValid: boolean) => {
+    setFieldValidationState((prev) => ({
+      ...prev,
+      [fieldName]: isValid,
+    }));
+  };
+
+  const isFormValid = Object.values(fieldValidationState).every((isValid) => isValid);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -186,47 +208,60 @@ export function App() {
                   name="Bolt Spacing"
                   defaultValue="60"
                   validator={validateBoltSpacing}
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="boltDiameter"
                   name="Bolt Diameter"
                   defaultValue="10"
                   validator={validateBoltDiameter}
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="bracketHeight"
                   name="Bracket Height"
                   defaultValue="400"
                   validator={validateBracketHeight}
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="bracketWidth"
                   name="Bracket Width"
                   defaultValue="300"
                   validator={validateBracketWidth}
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="pinDiameter"
                   name="Pin Diameter"
                   defaultValue="10"
                   validator={validatePinDiameter}
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="pinCount"
                   name="Pin Count"
                   defaultValue="6"
                   validator={validatePinCount}
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="plateThickness"
                   name="Plate Thickness"
                   defaultValue="8"
                   validator={validatePlateThickness}
+                  onValidationChange={handleValidationChange}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !isFormValid}>
                 {isLoading ? "Generating..." : "Generate Model"}
               </Button>
+
+              {!isFormValid && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Please fix validation errors before generating the model
+                </p>
+              )}
 
               {downloadUrl && (
                 <div className="p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
