@@ -12,18 +12,61 @@ import { Button } from "./components/ui/button";
 import { ThemePicker } from "./components/ui/theme-picker";
 
 import "./index.css";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { ModelViewer } from "./components/model-viewer";
+import {
+  validateBoltSpacing,
+  validateBoltDiameter,
+  validateBracketHeight,
+  validateBracketWidth,
+  validatePinDiameter,
+  validatePinCount,
+  validatePlateThickness,
+  type ValidationResult,
+} from "./lib/validation";
 
 function Combined({
   forProp,
   name,
   defaultValue = "10",
+  validator,
 }: {
   forProp: string;
   name: string;
   defaultValue?: string;
+  validator: (value: number) => Promise<ValidationResult>;
 }) {
+  const [value, setValue] = useState(defaultValue);
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    // Validate on value change with debounce
+    const timeoutId = setTimeout(async () => {
+      if (value && touched) {
+        const result = await validator(Number(value));
+        setValidationResult(result);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [value, validator, touched]);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    if (!touched) {
+      setTouched(true);
+    }
+  };
+
+  const handleBlur = async () => {
+    setTouched(true);
+    if (value) {
+      const result = await validator(Number(value));
+      setValidationResult(result);
+    }
+  };
+
   return (
     <div>
       <Label htmlFor={forProp}>{name}</Label>
@@ -31,9 +74,19 @@ function Combined({
         id={forProp}
         type="number"
         name={forProp}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
         placeholder={defaultValue}
+        className={
+          touched && !validationResult.valid
+            ? "border-red-500 focus-visible:ring-red-500"
+            : ""
+        }
       />
+      {touched && !validationResult.valid && (
+        <p className="text-xs text-red-500 mt-1">{validationResult.error}</p>
+      )}
     </div>
   );
 }
@@ -132,36 +185,43 @@ export function App() {
                   forProp="boltSpacing"
                   name="Bolt Spacing"
                   defaultValue="60"
+                  validator={validateBoltSpacing}
                 />
                 <Combined
                   forProp="boltDiameter"
                   name="Bolt Diameter"
                   defaultValue="10"
+                  validator={validateBoltDiameter}
                 />
                 <Combined
                   forProp="bracketHeight"
                   name="Bracket Height"
                   defaultValue="400"
+                  validator={validateBracketHeight}
                 />
                 <Combined
                   forProp="bracketWidth"
                   name="Bracket Width"
                   defaultValue="300"
+                  validator={validateBracketWidth}
                 />
                 <Combined
                   forProp="pinDiameter"
                   name="Pin Diameter"
                   defaultValue="10"
+                  validator={validatePinDiameter}
                 />
                 <Combined
                   forProp="pinCount"
                   name="Pin Count"
                   defaultValue="6"
+                  validator={validatePinCount}
                 />
                 <Combined
                   forProp="plateThickness"
                   name="Plate Thickness"
                   defaultValue="8"
+                  validator={validatePlateThickness}
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>

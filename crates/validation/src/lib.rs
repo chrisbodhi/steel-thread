@@ -2,6 +2,10 @@
 
 use domain::ActuatorPlate;
 
+// WebAssembly bindings (only compiled for wasm32 target)
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
+
 // TODO: move into just-actuator-only file
 
 // TODO: make a trait that works for items besides plates

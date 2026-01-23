@@ -3,9 +3,17 @@ name = "validation"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
 [lib]
-# Pure Rust library - no WASM concerns
-crate-type = ["rlib"]
+# Support both native Rust library and WASM
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 domain = { path = "../domain" }
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.6"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

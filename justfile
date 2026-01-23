@@ -1,5 +1,5 @@
 # Development: run both servers
-dev:
+dev: build-wasm
     #!/usr/bin/env bash
     echo "Starting API and frontend servers..."
     echo "API will run on http://localhost:3030"
@@ -10,11 +10,15 @@ dev:
     wait
 
 # Run just the Bun frontend dev server
-dev-frontend:
+dev-frontend: build-wasm
     cd frontend && bun dev
 
+# Build WASM validation module for frontend
+build-wasm:
+    wasm-pack build crates/validation --target web --out-dir ../../frontend/src/wasm-validation --no-typescript
+
 # Build frontend for production
-build:
+build: build-wasm
     cd frontend && bun run build
 
 # Build everything for production
