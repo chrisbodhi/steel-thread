@@ -67,17 +67,20 @@ cargo test -p web
 
 ### 1. Validation Logic Tests (`crates/validation/src/lib.rs`)
 
-**Individual Field Validators** (12 tests):
+**Individual Field Validators** (15 tests):
 - `test_validate_bolt_spacing_valid` - Valid values (60, 1, u16::MAX)
 - `test_validate_bolt_spacing_invalid` - Zero value rejection
-- `test_validate_bolt_diameter_valid` - Valid diameter
-- `test_validate_bolt_diameter_invalid` - Zero diameter rejection
+- `test_validate_bolt_size_valid` - Valid ISO metric sizes (M3-M12, case-insensitive)
+- `test_validate_bolt_size_invalid` - Invalid sizes (M7, M11, M2, numeric strings, empty)
 - `test_validate_bracket_height_valid` - Valid height
 - `test_validate_bracket_height_invalid` - Zero height rejection
 - `test_validate_bracket_width_valid` - Valid width
 - `test_validate_bracket_width_invalid` - Zero width rejection
 - `test_validate_pin_diameter_valid` - Valid pin diameter
 - `test_validate_pin_diameter_invalid` - Zero pin diameter rejection
+- `test_validate_pin_count_valid` - Valid counts (1, 6, 12)
+- `test_validate_pin_count_too_small` - Zero count rejection
+- `test_validate_pin_count_too_large` - Count > 12 rejection
 - `test_validate_plate_thickness_valid` - Valid thickness
 - `test_validate_plate_thickness_invalid` - Zero thickness rejection
 
