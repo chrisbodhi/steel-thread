@@ -9,6 +9,13 @@ import {
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Button } from "./components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
 import { ThemePicker } from "./components/ui/theme-picker";
 
 import "./index.css";
@@ -16,7 +23,7 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { ModelViewer } from "./components/model-viewer";
 import {
   validateBoltSpacing,
-  validateBoltDiameter,
+  validateBoltSize,
   validateBracketHeight,
   validateBracketWidth,
   validatePinDiameter,
@@ -100,6 +107,71 @@ function Combined({
   );
 }
 
+const BOLT_SIZES = ["M3", "M4", "M5", "M6", "M8", "M10", "M12"] as const;
+
+function BoltSizeSelect({
+  forProp,
+  name,
+  defaultValue = "M10",
+  onValidationChange,
+}: {
+  forProp: string;
+  name: string;
+  defaultValue?: string;
+  onValidationChange?: (fieldName: string, isValid: boolean) => void;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    // Validate on value change
+    const validateValue = async () => {
+      if (value && touched) {
+        const result = await validateBoltSize(value);
+        setValidationResult(result);
+        onValidationChange?.(forProp, result.valid);
+      }
+    };
+    validateValue();
+  }, [value, touched, forProp, onValidationChange]);
+
+  const handleChange = (newValue: string) => {
+    setValue(newValue);
+    if (!touched) {
+      setTouched(true);
+    }
+  };
+
+  return (
+    <div>
+      <Label htmlFor={forProp}>{name}</Label>
+      <Select name={forProp} value={value} onValueChange={handleChange}>
+        <SelectTrigger
+          id={forProp}
+          className={
+            touched && !validationResult.valid
+              ? "border-red-500 focus-visible:ring-red-500"
+              : ""
+          }
+        >
+          <SelectValue placeholder="Select bolt size" />
+        </SelectTrigger>
+        <SelectContent>
+          {BOLT_SIZES.map((size) => (
+            <SelectItem key={size} value={size}>
+              {size}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {touched && !validationResult.valid && (
+        <p className="text-xs text-red-500 mt-1">{validationResult.error}</p>
+      )}
+    </div>
+  );
+}
+
 export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -107,7 +179,7 @@ export function App() {
   const [modelSrc, setModelSrc] = useState<string | null>(null);
   const [fieldValidationState, setFieldValidationState] = useState<Record<string, boolean>>({
     boltSpacing: true,
-    boltDiameter: true,
+    boltSize: true,
     bracketHeight: true,
     bracketWidth: true,
     pinDiameter: true,
@@ -137,7 +209,7 @@ export function App() {
 
       const body = JSON.stringify({
         bolt_spacing: Number(formData.get("boltSpacing")),
-        bolt_diameter: Number(formData.get("boltDiameter")),
+        bolt_size: formData.get("boltSize"),
         bracket_height: Number(formData.get("bracketHeight")),
         bracket_width: Number(formData.get("bracketWidth")),
         pin_diameter: Number(formData.get("pinDiameter")),
@@ -216,13 +288,11 @@ export function App() {
                   onValidationChange={handleValidationChange}
                   unit="mm"
                 />
-                <Combined
-                  forProp="boltDiameter"
-                  name="Bolt Diameter"
-                  defaultValue="10"
-                  validator={validateBoltDiameter}
+                <BoltSizeSelect
+                  forProp="boltSize"
+                  name="Bolt Size"
+                  defaultValue="M10"
                   onValidationChange={handleValidationChange}
-                  unit="mm"
                 />
                 <Combined
                   forProp="bracketHeight"

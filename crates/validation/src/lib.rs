@@ -18,7 +18,7 @@ pub mod wasm;
 
 pub fn validate(plate: &ActuatorPlate) -> Result<(), PlateValidationError> {
     validate_bolt_spacing(plate.bolt_spacing.0)?;
-    validate_bolt_diameter(plate.bolt_diameter.0)?;
+    // bolt_size is validated by the type system (enum only allows valid ISO sizes)
     validate_bracket_height(plate.bracket_height.0)?;
     validate_bracket_width(plate.bracket_width.0)?;
     validate_pin_diameter(plate.pin_diameter.0)?;
@@ -34,11 +34,17 @@ pub fn validate_bolt_spacing(value: u16) -> Result<(), PlateValidationError> {
     Ok(())
 }
 
-pub fn validate_bolt_diameter(value: u16) -> Result<(), PlateValidationError> {
-    if value == 0 {
-        return Err(PlateValidationError::BoltDiameterInvalid);
+/// Validate that a bolt size string is a valid ISO metric size.
+///
+/// Accepts standard metric bolt designations: "M3", "M4", "M5", "M6", "M8", "M10", "M12"
+/// (case-insensitive).
+pub fn validate_bolt_size(value: &str) -> Result<(), PlateValidationError> {
+    let upper = value.trim();
+    match upper {
+        "M3" | "m3" | "M4" | "m4" | "M5" | "m5" | "M6" | "m6" | "M8" | "m8" | "M10" | "m10"
+        | "M12" | "m12" => Ok(()),
+        _ => Err(PlateValidationError::BoltSizeInvalid),
     }
-    Ok(())
 }
 
 pub fn validate_bracket_height(value: u16) -> Result<(), PlateValidationError> {
@@ -82,7 +88,7 @@ pub fn validate_plate_thickness(value: u16) -> Result<(), PlateValidationError> 
 #[derive(Debug)]
 pub enum PlateValidationError {
     BoltSpacingTooSmall,
-    BoltDiameterInvalid,
+    BoltSizeInvalid,
     BracketHeightInvalid,
     BracketWidthInvalid,
     PinDiameterInvalid,
@@ -95,7 +101,10 @@ impl core::fmt::Display for PlateValidationError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::BoltSpacingTooSmall => write!(f, "bolt spacing must be greater than 0"),
-            Self::BoltDiameterInvalid => write!(f, "bolt diameter must be greater than 0"),
+            Self::BoltSizeInvalid => write!(
+                f,
+                "bolt size must be a standard ISO metric size: M3, M4, M5, M6, M8, M10, or M12"
+            ),
             Self::BracketHeightInvalid => write!(f, "bracket height must be greater than 0"),
             Self::BracketWidthInvalid => write!(f, "bracket width must be greater than 0"),
             Self::PinDiameterInvalid => write!(f, "pin diameter must be greater than 0"),
@@ -114,7 +123,7 @@ mod tests {
     use alloc::string::ToString;
 
     use super::*;
-    use domain::Millimeters;
+    use domain::{BoltSize, Millimeters};
 
     #[test]
     fn test_validate_bolt_spacing_valid() {
@@ -134,17 +143,33 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_bolt_diameter_valid() {
-        assert!(validate_bolt_diameter(10).is_ok());
+    fn test_validate_bolt_size_valid() {
+        assert!(validate_bolt_size("M3").is_ok());
+        assert!(validate_bolt_size("M4").is_ok());
+        assert!(validate_bolt_size("M5").is_ok());
+        assert!(validate_bolt_size("M6").is_ok());
+        assert!(validate_bolt_size("M8").is_ok());
+        assert!(validate_bolt_size("M10").is_ok());
+        assert!(validate_bolt_size("M12").is_ok());
+        // Test case-insensitive
+        assert!(validate_bolt_size("m3").is_ok());
+        assert!(validate_bolt_size("m10").is_ok());
     }
 
     #[test]
-    fn test_validate_bolt_diameter_invalid() {
-        let result = validate_bolt_diameter(0);
+    fn test_validate_bolt_size_invalid() {
+        assert!(validate_bolt_size("M7").is_err());
+        assert!(validate_bolt_size("M11").is_err());
+        assert!(validate_bolt_size("M2").is_err());
+        assert!(validate_bolt_size("10").is_err());
+        assert!(validate_bolt_size("").is_err());
+        assert!(validate_bolt_size("invalid").is_err());
+
+        let result = validate_bolt_size("M7");
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            PlateValidationError::BoltDiameterInvalid
+            PlateValidationError::BoltSizeInvalid
         ));
     }
 
@@ -239,7 +264,7 @@ mod tests {
     fn test_validate_full_plate_valid() {
         let plate = ActuatorPlate {
             bolt_spacing: Millimeters(60),
-            bolt_diameter: Millimeters(10),
+            bolt_size: BoltSize::M10,
             bracket_height: Millimeters(40),
             bracket_width: Millimeters(30),
             pin_diameter: Millimeters(10),
@@ -253,7 +278,7 @@ mod tests {
     fn test_validate_full_plate_invalid_bolt_spacing() {
         let plate = ActuatorPlate {
             bolt_spacing: Millimeters(0),
-            bolt_diameter: Millimeters(10),
+            bolt_size: BoltSize::M10,
             bracket_height: Millimeters(40),
             bracket_width: Millimeters(30),
             pin_diameter: Millimeters(10),
@@ -275,8 +300,8 @@ mod tests {
             "bolt spacing must be greater than 0"
         );
         assert_eq!(
-            PlateValidationError::BoltDiameterInvalid.to_string(),
-            "bolt diameter must be greater than 0"
+            PlateValidationError::BoltSizeInvalid.to_string(),
+            "bolt size must be a standard ISO metric size: M3, M4, M5, M6, M8, M10, or M12"
         );
         assert_eq!(
             PlateValidationError::BracketHeightInvalid.to_string(),
