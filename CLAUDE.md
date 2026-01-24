@@ -174,16 +174,23 @@ The server runs on port 3030 and serves:
 
 ## CI/CD
 
-### GitHub Actions Workflow
+### GitHub Actions Workflows
 
 The project uses GitHub Actions for continuous integration and deployment:
 
-- **Test job**: Runs all tests on Ubuntu 22.04
-- **Build job**: Builds the release binary for deployment to Lightsail
+**CI Workflow** (`.github/workflows/ci.yml`):
+- Runs on all pull requests targeting master
+- **test-rust**: Runs `cargo test` and `cargo clippy`
+- **test-frontend**: Builds frontend to catch TypeScript errors
+
+**Build Workflow** (`.github/workflows/build.yml`):
+- Runs on pushes to master
+- **test**: Runs all tests and clippy
+- **build**: Builds the release binary for deployment to Lightsail
 
 ### IMPORTANT: Cache Busting When Adding Dependencies
 
-**When adding new Rust crates**, you must bump the cache version in `.github/workflows/build.yml` to prevent cache incompatibility issues.
+**When adding new Rust crates**, you must bump the cache version in **BOTH** GitHub Actions workflows to prevent cache incompatibility issues.
 
 #### Why This Matters
 
@@ -191,8 +198,9 @@ GitHub Actions caches the `target/` directory and cargo registry to speed up bui
 
 #### How to Bump the Cache
 
-In `.github/workflows/build.yml`, update the cache version prefix in **both** the test and build jobs:
+Update the cache version prefix in **ALL** of these locations:
 
+**1. In `.github/workflows/ci.yml`** (PR checks):
 ```yaml
 # Change this:
 key: ${{ runner.os }}-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
@@ -205,9 +213,14 @@ restore-keys: |
   ${{ runner.os }}-cargo-v3-
 ```
 
-Do this for both cache blocks:
-1. The test job cache (~line 20)
-2. The build job cache (~line 49)
+Update in:
+- The test-rust job cache (~line 20)
+
+**2. In `.github/workflows/build.yml`** (master builds):
+
+Update in:
+- The test job cache (~line 20)
+- The build job cache (~line 49)
 
 #### When to Bump
 
@@ -216,6 +229,8 @@ Bump the cache version (v2 → v3 → v4, etc.) when:
 - Upgrading major versions of existing dependencies
 - CI build fails but local build succeeds
 - You see "error: failed to select a version" or similar dependency resolution errors in CI
+
+**CRITICAL**: Keep cache versions synchronized across both workflows to avoid confusion.
 
 #### Example
 
@@ -385,4 +400,4 @@ When implementing new features, consider:
 2. Is the validation logic in the shared validation crate?
 3. Does the frontend need to be updated?
 4. Have I written tests for this feature?
-5. **If adding Rust dependencies**: Did I bump the GitHub Actions cache version in `.github/workflows/build.yml`?
+5. **If adding Rust dependencies**: Did I bump the GitHub Actions cache version in **BOTH** `.github/workflows/ci.yml` and `.github/workflows/build.yml`?
