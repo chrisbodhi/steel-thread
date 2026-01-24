@@ -31,12 +31,14 @@ function Combined({
   defaultValue = "10",
   validator,
   onValidationChange,
+  unit,
 }: {
   forProp: string;
   name: string;
   defaultValue?: string;
   validator: (value: number) => Promise<ValidationResult>;
   onValidationChange?: (fieldName: string, isValid: boolean) => void;
+  unit?: string;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
@@ -73,7 +75,10 @@ function Combined({
 
   return (
     <div>
-      <Label htmlFor={forProp}>{name}</Label>
+      <Label htmlFor={forProp}>
+        {name}
+        {unit && <span className="text-muted-foreground"> ({unit})</span>}
+      </Label>
       <Input
         id={forProp}
         type="number"
@@ -209,6 +214,7 @@ export function App() {
                   defaultValue="60"
                   validator={validateBoltSpacing}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="boltDiameter"
@@ -216,6 +222,7 @@ export function App() {
                   defaultValue="10"
                   validator={validateBoltDiameter}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="bracketHeight"
@@ -223,6 +230,7 @@ export function App() {
                   defaultValue="400"
                   validator={validateBracketHeight}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="bracketWidth"
@@ -230,6 +238,7 @@ export function App() {
                   defaultValue="300"
                   validator={validateBracketWidth}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="pinDiameter"
@@ -237,6 +246,7 @@ export function App() {
                   defaultValue="10"
                   validator={validatePinDiameter}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="pinCount"
@@ -251,6 +261,7 @@ export function App() {
                   defaultValue="8"
                   validator={validatePlateThickness}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading || !isFormValid}>
