@@ -19,7 +19,7 @@ import {
 import { ThemePicker } from "./components/ui/theme-picker";
 
 import "./index.css";
-import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
+import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from "react";
 import { ModelViewer } from "./components/model-viewer";
 import {
   validateBoltSpacing,
@@ -187,12 +187,12 @@ export function App() {
     plateThickness: true,
   });
 
-  const handleValidationChange = (fieldName: string, isValid: boolean) => {
+  const handleValidationChange = useCallback((fieldName: string, isValid: boolean) => {
     setFieldValidationState((prev) => ({
       ...prev,
       [fieldName]: isValid,
     }));
-  };
+  }, []);
 
   const isFormValid = Object.values(fieldValidationState).every((isValid) => isValid);
 
