@@ -75,7 +75,7 @@ fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
         plate.bolt_spacing.0,
         plate.bracket_height.0,
         plate.bracket_width.0,
-        plate.material.as_kcl_str(),
+        plate.material.as_hex_code(),
         plate.pin_diameter.0,
         plate.pin_count
     );

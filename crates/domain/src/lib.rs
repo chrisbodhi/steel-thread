@@ -87,8 +87,8 @@ pub enum Material {
 }
 
 impl Material {
-    /// Returns the material name as a lowercase string for KCL.
-    pub const fn as_kcl_str(&self) -> &'static str {
+    /// Returns the material hex color code for KCL.
+    pub const fn as_hex_code(&self) -> &'static str {
         match self {
             // Aluminum 6061-T6: Light silvery-gray with slight blue tint
             Material::Aluminum => "#A9ACB6",
@@ -192,7 +192,7 @@ impl ActuatorPlate {
         hasher.update(self.bolt_size.nominal_diameter_mm().to_le_bytes());
         hasher.update(self.bracket_height.0.to_le_bytes());
         hasher.update(self.bracket_width.0.to_le_bytes());
-        hasher.update(self.material.as_kcl_str().as_bytes());
+        hasher.update(self.material.as_hex_code().as_bytes());
         hasher.update(self.pin_diameter.0.to_le_bytes());
         hasher.update(self.pin_count.to_le_bytes());
         hasher.update(self.plate_thickness.0.to_le_bytes());
@@ -264,9 +264,9 @@ mod tests {
 
     #[test]
     fn test_material_kcl_str() {
-        assert_eq!(Material::Aluminum.as_kcl_str(), "#A9ACB6");
-        assert_eq!(Material::StainlessSteel.as_kcl_str(), "#C0C4CE");
-        assert_eq!(Material::CarbonSteel.as_kcl_str(), "#605E5C");
-        assert_eq!(Material::Brass.as_kcl_str(), "#B5A642");
+        assert_eq!(Material::Aluminum.as_hex_code(), "#A9ACB6");
+        assert_eq!(Material::StainlessSteel.as_hex_code(), "#C0C4CE");
+        assert_eq!(Material::CarbonSteel.as_hex_code(), "#605E5C");
+        assert_eq!(Material::Brass.as_hex_code(), "#B5A642");
     }
 }
