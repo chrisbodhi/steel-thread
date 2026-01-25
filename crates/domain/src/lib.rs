@@ -102,6 +102,7 @@ pub struct ActuatorPlate {
     ///
     /// Count of pivot pins required for the actuator mechanism.
     /// Must be between 1 and 12 inclusive.
+    #[cfg_attr(feature = "openapi", schema(example = 6))]
     pub pin_count: u16,
 
     /// Thickness of the base plate material (in millimeters).
