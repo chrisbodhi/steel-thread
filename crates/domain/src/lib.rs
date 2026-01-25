@@ -131,6 +131,25 @@ impl ActuatorPlate {
             plate_thickness,
         }
     }
+
+    /// Generate a deterministic cache key based on plate configuration.
+    /// Returns a string in the format "plate-{16_hex_chars}" derived from SHA-256 hash.
+    #[cfg(feature = "openapi")]
+    pub fn cache_key(&self) -> String {
+        use sha2::{Digest, Sha256};
+
+        let mut hasher = Sha256::new();
+        hasher.update(self.bolt_spacing.0.to_le_bytes());
+        hasher.update(self.bolt_size.nominal_diameter_mm().to_le_bytes());
+        hasher.update(self.bracket_height.0.to_le_bytes());
+        hasher.update(self.bracket_width.0.to_le_bytes());
+        hasher.update(self.pin_diameter.0.to_le_bytes());
+        hasher.update(self.pin_count.to_le_bytes());
+        hasher.update(self.plate_thickness.0.to_le_bytes());
+
+        let result = hasher.finalize();
+        format!("plate-{}", hex::encode(&result[..8]))
+    }
 }
 
 impl Default for ActuatorPlate {
@@ -144,5 +163,42 @@ impl Default for ActuatorPlate {
             pin_count: 6,
             plate_thickness: Millimeters(8),
         }
+    }
+}
+
+#[cfg(all(test, feature = "openapi"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cache_key_is_deterministic() {
+        let plate = ActuatorPlate::default();
+        let key1 = plate.cache_key();
+        let key2 = plate.cache_key();
+        assert_eq!(key1, key2);
+    }
+
+    #[test]
+    fn test_cache_key_format() {
+        let plate = ActuatorPlate::default();
+        let key = plate.cache_key();
+        assert!(key.starts_with("plate-"));
+        assert_eq!(key.len(), 6 + 16); // "plate-" + 16 hex chars
+    }
+
+    #[test]
+    fn test_cache_key_differs_for_different_plates() {
+        let plate1 = ActuatorPlate::default();
+        let mut plate2 = ActuatorPlate::default();
+        plate2.bolt_spacing = Millimeters(61);
+
+        assert_ne!(plate1.cache_key(), plate2.cache_key());
+    }
+
+    #[test]
+    fn test_cache_key_same_for_equal_plates() {
+        let plate1 = ActuatorPlate::default();
+        let plate2 = ActuatorPlate::default();
+        assert_eq!(plate1.cache_key(), plate2.cache_key());
     }
 }

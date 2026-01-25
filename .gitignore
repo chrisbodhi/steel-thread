@@ -2,6 +2,7 @@
 frontend/node_modules/
 frontend/src/wasm-validation/
 crates/parametric/src/params.kcl
+cache/
 .DS_Store
 
 output_dir/output.step
