@@ -302,7 +302,7 @@ mod tests {
         assert!(content.contains("export bracketHeight"));
         assert!(content.contains("export bracketWidth"));
         // Verify material is included (default is aluminum)
-        assert!(content.contains("export material = \"aluminum\""));
+        assert!(content.contains("export materialColor = \"#A9ACB6\""));
         assert!(content.contains("export pinDiameter"));
         assert!(content.contains("export pinCount = 6"));
 
