@@ -63,6 +63,41 @@ impl BoltSize {
     }
 }
 
+/// Materials suitable for actuator mounting plates.
+///
+/// Each material has different properties affecting strength, weight,
+/// corrosion resistance, and cost. The choice of material affects
+/// manufacturing tolerances and appearance.
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Material {
+    /// Aluminum 6061-T6: Lightweight, excellent corrosion resistance,
+    /// good machinability. Most common choice for general-purpose plates.
+    Aluminum,
+    /// Stainless Steel 304: Higher strength than aluminum, excellent
+    /// corrosion resistance. Heavier but more durable.
+    StainlessSteel,
+    /// Carbon Steel: Highest strength, cost-effective. Requires coating
+    /// or treatment for corrosion protection.
+    CarbonSteel,
+    /// Brass: Good corrosion resistance, decorative appearance.
+    /// Suitable for specific environments or aesthetic requirements.
+    Brass,
+}
+
+impl Material {
+    /// Returns the material name as a lowercase string for KCL.
+    pub const fn as_kcl_str(&self) -> &'static str {
+        match self {
+            Material::Aluminum => "aluminum",
+            Material::StainlessSteel => "stainless_steel",
+            Material::CarbonSteel => "carbon_steel",
+            Material::Brass => "brass",
+        }
+    }
+}
+
 /// Configuration for an actuator plate assembly.
 ///
 /// Defines the physical dimensions and parameters for manufacturing
@@ -92,6 +127,13 @@ pub struct ActuatorPlate {
     /// Horizontal dimension of the bracket that holds the actuator.
     pub bracket_width: Millimeters,
 
+    /// Material for the plate.
+    ///
+    /// Affects strength, weight, corrosion resistance, and appearance.
+    /// Common choices are aluminum (lightweight), stainless steel (durable),
+    /// carbon steel (strong), or brass (decorative).
+    pub material: Material,
+
     /// Diameter of actuator pivot pins (in millimeters).
     ///
     /// Separate from mounting bolts. These pins are used for the actuator
@@ -117,6 +159,7 @@ impl ActuatorPlate {
         bolt_size: BoltSize,
         bracket_height: Millimeters,
         bracket_width: Millimeters,
+        material: Material,
         pin_diameter: Millimeters,
         pin_count: u16,
         plate_thickness: Millimeters,
@@ -126,6 +169,7 @@ impl ActuatorPlate {
             bolt_size,
             bracket_height,
             bracket_width,
+            material,
             pin_diameter,
             pin_count,
             plate_thickness,
@@ -143,6 +187,7 @@ impl ActuatorPlate {
         hasher.update(self.bolt_size.nominal_diameter_mm().to_le_bytes());
         hasher.update(self.bracket_height.0.to_le_bytes());
         hasher.update(self.bracket_width.0.to_le_bytes());
+        hasher.update(self.material.as_kcl_str().as_bytes());
         hasher.update(self.pin_diameter.0.to_le_bytes());
         hasher.update(self.pin_count.to_le_bytes());
         hasher.update(self.plate_thickness.0.to_le_bytes());
@@ -159,6 +204,7 @@ impl Default for ActuatorPlate {
             bolt_size: BoltSize::M10,
             bracket_height: Millimeters(400),
             bracket_width: Millimeters(300),
+            material: Material::Aluminum,
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
@@ -196,9 +242,26 @@ mod tests {
     }
 
     #[test]
+    fn test_cache_key_differs_for_different_materials() {
+        let plate1 = ActuatorPlate::default();
+        let mut plate2 = ActuatorPlate::default();
+        plate2.material = Material::StainlessSteel;
+
+        assert_ne!(plate1.cache_key(), plate2.cache_key());
+    }
+
+    #[test]
     fn test_cache_key_same_for_equal_plates() {
         let plate1 = ActuatorPlate::default();
         let plate2 = ActuatorPlate::default();
         assert_eq!(plate1.cache_key(), plate2.cache_key());
+    }
+
+    #[test]
+    fn test_material_kcl_str() {
+        assert_eq!(Material::Aluminum.as_kcl_str(), "aluminum");
+        assert_eq!(Material::StainlessSteel.as_kcl_str(), "stainless_steel");
+        assert_eq!(Material::CarbonSteel.as_kcl_str(), "carbon_steel");
+        assert_eq!(Material::Brass.as_kcl_str(), "brass");
     }
 }

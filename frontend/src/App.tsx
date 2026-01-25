@@ -26,6 +26,7 @@ import {
   validateBoltSize,
   validateBracketHeight,
   validateBracketWidth,
+  validateMaterial,
   validatePinDiameter,
   validatePinCount,
   validatePlateThickness,
@@ -109,6 +110,13 @@ function Combined({
 
 const BOLT_SIZES = ["M3", "M4", "M5", "M6", "M8", "M10", "M12"] as const;
 
+const MATERIALS = [
+  { value: "aluminum", label: "Aluminum 6061-T6" },
+  { value: "stainless_steel", label: "Stainless Steel 304" },
+  { value: "carbon_steel", label: "Carbon Steel" },
+  { value: "brass", label: "Brass" },
+] as const;
+
 function BoltSizeSelect({
   forProp,
   name,
@@ -172,6 +180,69 @@ function BoltSizeSelect({
   );
 }
 
+function MaterialSelect({
+  forProp,
+  name,
+  defaultValue = "aluminum",
+  onValidationChange,
+}: {
+  forProp: string;
+  name: string;
+  defaultValue?: string;
+  onValidationChange?: (fieldName: string, isValid: boolean) => void;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    // Validate on value change
+    const validateValue = async () => {
+      if (value && touched) {
+        const result = await validateMaterial(value);
+        setValidationResult(result);
+        onValidationChange?.(forProp, result.valid);
+      }
+    };
+    validateValue();
+  }, [value, touched, forProp, onValidationChange]);
+
+  const handleChange = (newValue: string) => {
+    setValue(newValue);
+    if (!touched) {
+      setTouched(true);
+    }
+  };
+
+  return (
+    <div>
+      <Label htmlFor={forProp}>{name}</Label>
+      <Select name={forProp} value={value} onValueChange={handleChange}>
+        <SelectTrigger
+          id={forProp}
+          className={
+            touched && !validationResult.valid
+              ? "border-red-500 focus-visible:ring-red-500"
+              : ""
+          }
+        >
+          <SelectValue placeholder="Select material" />
+        </SelectTrigger>
+        <SelectContent>
+          {MATERIALS.map((mat) => (
+            <SelectItem key={mat.value} value={mat.value}>
+              {mat.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {touched && !validationResult.valid && (
+        <p className="text-xs text-red-500 mt-1">{validationResult.error}</p>
+      )}
+    </div>
+  );
+}
+
 export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -182,6 +253,7 @@ export function App() {
     boltSize: true,
     bracketHeight: true,
     bracketWidth: true,
+    material: true,
     pinDiameter: true,
     pinCount: true,
     plateThickness: true,
@@ -212,6 +284,7 @@ export function App() {
         bolt_size: formData.get("boltSize"),
         bracket_height: Number(formData.get("bracketHeight")),
         bracket_width: Number(formData.get("bracketWidth")),
+        material: formData.get("material"),
         pin_diameter: Number(formData.get("pinDiameter")),
         pin_count: Number(formData.get("pinCount")),
         plate_thickness: Number(formData.get("plateThickness")),
@@ -309,6 +382,12 @@ export function App() {
                   validator={validateBracketWidth}
                   onValidationChange={handleValidationChange}
                   unit="mm"
+                />
+                <MaterialSelect
+                  forProp="material"
+                  name="Material"
+                  defaultValue="aluminum"
+                  onValidationChange={handleValidationChange}
                 />
                 <Combined
                   forProp="pinDiameter"

@@ -21,6 +21,7 @@ pub fn validate(plate: &ActuatorPlate) -> Result<(), PlateValidationError> {
     // bolt_size is validated by the type system (enum only allows valid ISO sizes)
     validate_bracket_height(plate.bracket_height.0)?;
     validate_bracket_width(plate.bracket_width.0)?;
+    // material is validated by the type system (enum only allows valid materials)
     validate_pin_diameter(plate.pin_diameter.0)?;
     validate_pin_count(plate.pin_count)?;
     validate_plate_thickness(plate.plate_thickness.0)?;
@@ -44,6 +45,21 @@ pub fn validate_bolt_size(value: &str) -> Result<(), PlateValidationError> {
         "M3" | "m3" | "M4" | "m4" | "M5" | "m5" | "M6" | "m6" | "M8" | "m8" | "M10" | "m10"
         | "M12" | "m12" => Ok(()),
         _ => Err(PlateValidationError::BoltSizeInvalid),
+    }
+}
+
+/// Validate that a material string is a valid material type.
+///
+/// Accepts: "aluminum", "stainless_steel", "carbon_steel", "brass" (case-insensitive).
+pub fn validate_material(value: &str) -> Result<(), PlateValidationError> {
+    let trimmed = value.trim();
+    // Case-insensitive comparison using manual matching
+    match trimmed {
+        "aluminum" | "Aluminum" | "ALUMINUM" | "stainless_steel" | "Stainless_Steel"
+        | "STAINLESS_STEEL" | "stainlessSteel" | "StainlessSteel" | "carbon_steel"
+        | "Carbon_Steel" | "CARBON_STEEL" | "carbonSteel" | "CarbonSteel" | "brass" | "Brass"
+        | "BRASS" => Ok(()),
+        _ => Err(PlateValidationError::MaterialInvalid),
     }
 }
 
@@ -91,6 +107,7 @@ pub enum PlateValidationError {
     BoltSizeInvalid,
     BracketHeightInvalid,
     BracketWidthInvalid,
+    MaterialInvalid,
     PinDiameterInvalid,
     PinCountTooSmall,
     PinCountTooLarge,
@@ -107,6 +124,10 @@ impl core::fmt::Display for PlateValidationError {
             ),
             Self::BracketHeightInvalid => write!(f, "bracket height must be greater than 0"),
             Self::BracketWidthInvalid => write!(f, "bracket width must be greater than 0"),
+            Self::MaterialInvalid => write!(
+                f,
+                "material must be one of: aluminum, stainless_steel, carbon_steel, or brass"
+            ),
             Self::PinDiameterInvalid => write!(f, "pin diameter must be greater than 0"),
             Self::PinCountTooSmall => write!(f, "pin count must be at least 1"),
             Self::PinCountTooLarge => write!(f, "pin count must not exceed 12"),
@@ -123,7 +144,7 @@ mod tests {
     use alloc::string::ToString;
 
     use super::*;
-    use domain::{BoltSize, Millimeters};
+    use domain::{BoltSize, Material, Millimeters};
 
     #[test]
     fn test_validate_bolt_spacing_valid() {
@@ -267,6 +288,7 @@ mod tests {
             bolt_size: BoltSize::M10,
             bracket_height: Millimeters(40),
             bracket_width: Millimeters(30),
+            material: Material::Aluminum,
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
@@ -281,6 +303,7 @@ mod tests {
             bolt_size: BoltSize::M10,
             bracket_height: Millimeters(40),
             bracket_width: Millimeters(30),
+            material: Material::Aluminum,
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
@@ -290,6 +313,33 @@ mod tests {
         assert!(matches!(
             result.unwrap_err(),
             PlateValidationError::BoltSpacingTooSmall
+        ));
+    }
+
+    #[test]
+    fn test_validate_material_valid() {
+        assert!(validate_material("aluminum").is_ok());
+        assert!(validate_material("Aluminum").is_ok());
+        assert!(validate_material("ALUMINUM").is_ok());
+        assert!(validate_material("stainless_steel").is_ok());
+        assert!(validate_material("Stainless_Steel").is_ok());
+        assert!(validate_material("carbon_steel").is_ok());
+        assert!(validate_material("brass").is_ok());
+        assert!(validate_material("Brass").is_ok());
+    }
+
+    #[test]
+    fn test_validate_material_invalid() {
+        assert!(validate_material("wood").is_err());
+        assert!(validate_material("plastic").is_err());
+        assert!(validate_material("").is_err());
+        assert!(validate_material("titanium").is_err());
+
+        let result = validate_material("invalid");
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            PlateValidationError::MaterialInvalid
         ));
     }
 
@@ -310,6 +360,10 @@ mod tests {
         assert_eq!(
             PlateValidationError::BracketWidthInvalid.to_string(),
             "bracket width must be greater than 0"
+        );
+        assert_eq!(
+            PlateValidationError::MaterialInvalid.to_string(),
+            "material must be one of: aluminum, stainless_steel, carbon_steel, or brass"
         );
         assert_eq!(
             PlateValidationError::PinDiameterInvalid.to_string(),
