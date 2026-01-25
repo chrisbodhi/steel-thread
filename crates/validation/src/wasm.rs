@@ -9,9 +9,8 @@ use alloc::string::{String, ToString};
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    validate_bolt_diameter, validate_bolt_spacing, validate_bracket_height,
-    validate_bracket_width, validate_pin_count, validate_pin_diameter,
-    validate_plate_thickness,
+    validate_bolt_size, validate_bolt_spacing, validate_bracket_height, validate_bracket_width,
+    validate_pin_count, validate_pin_diameter, validate_plate_thickness,
 };
 
 /// Validate bolt spacing value.
@@ -22,12 +21,13 @@ pub fn wasm_validate_bolt_spacing(value: u16) -> Result<(), String> {
     validate_bolt_spacing(value).map_err(|e| e.to_string())
 }
 
-/// Validate bolt diameter value.
+/// Validate bolt size value.
 ///
+/// Accepts standard ISO metric bolt sizes: M3, M4, M5, M6, M8, M10, M12.
 /// Returns Ok(()) if valid, or an error message if invalid.
 #[wasm_bindgen]
-pub fn wasm_validate_bolt_diameter(value: u16) -> Result<(), String> {
-    validate_bolt_diameter(value).map_err(|e| e.to_string())
+pub fn wasm_validate_bolt_size(value: &str) -> Result<(), String> {
+    validate_bolt_size(value).map_err(|e| e.to_string())
 }
 
 /// Validate bracket height value.

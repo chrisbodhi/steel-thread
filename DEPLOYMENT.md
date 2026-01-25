@@ -235,7 +235,7 @@ pub fn compute_plate_hash(plate: &ActuatorPlate) -> String {
     let mut hasher = Sha256::new();
 
     // Hash fields in sorted order for consistency
-    hasher.update(format!("bolt_diameter:{}", plate.bolt_diameter.0));
+    hasher.update(format!("bolt_size:{:?}", plate.bolt_size));  // BoltSize enum (M3-M12)
     hasher.update(format!("bolt_spacing:{}", plate.bolt_spacing.0));
     hasher.update(format!("bracket_height:{}", plate.bracket_height.0));
     hasher.update(format!("bracket_width:{}", plate.bracket_width.0));

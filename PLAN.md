@@ -12,17 +12,18 @@ This branch (`remove-ssr`) replaced the server-side rendered UI with a React SPA
 - [x] Shared validation crate (`no_std` compatible)
 - [x] Basic form UI foundation (not yet wired to sliders)
 
-### In Progress
-- [ ] Wire up form controls (sliders) for plate parameters:
-  - [ ] `bolt_spacing` in mm (default: 60, min: 10, max: 200)
-  - [ ] `bolt_diameter` in mm (default: 10, min: 3, max: 20)
-  - [ ] `bracket_height` in mm (default: 40, min: 10, max: 100)
-  - [ ] `bracket_width` in mm (default: 30, min: 10, max: 100)
-  - [ ] `pin_diameter` in mm (default: 10, min: 5, max: 30)
-  - [ ] `plate_thickness` in mm (default: 8, min: 2, max: 20)
-- [ ] Connect form to `/api/generate` endpoint
-- [ ] Display validation errors from API
-- [ ] Real-time validation feedback (consider WASM client-side validation)
+### Completed Form Integration
+- [x] Wire up form controls for plate parameters:
+  - [x] `bolt_spacing` in mm (number input with validation)
+  - [x] `bolt_size` - Standard ISO metric sizes (M3, M4, M5, M6, M8, M10, M12) via dropdown
+  - [x] `bracket_height` in mm (number input with validation)
+  - [x] `bracket_width` in mm (number input with validation)
+  - [x] `pin_diameter` in mm (number input with validation)
+  - [x] `pin_count` - Count between 1-12 (number input with validation)
+  - [x] `plate_thickness` in mm (number input with validation)
+- [x] Connect form to `/api/generate` endpoint
+- [x] Display validation errors from API
+- [x] Real-time WASM validation feedback (instant client-side validation)
 
 ### Next Steps (Future Work)
 - [ ] Generate visual preview of plate (2D or 3D)

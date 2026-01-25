@@ -287,7 +287,7 @@ const response = await fetch('/api/generate', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     bolt_spacing: 60,
-    bolt_diameter: 10,
+    bolt_size: "M10",  // Standard ISO metric bolt size (M3, M4, M5, M6, M8, M10, M12)
     bracket_height: 40,
     bracket_width: 30,
     pin_diameter: 10,
@@ -305,10 +305,11 @@ The validation crate provides:
 1. **Full plate validation**: `validate(plate: &ActuatorPlate)`
 2. **Individual field validators**:
    - `validate_bolt_spacing(value: u16)`
-   - `validate_bolt_diameter(value: u16)`
+   - `validate_bolt_size(value: &str)` - Validates standard ISO metric sizes (M3, M4, M5, M6, M8, M10, M12)
    - `validate_bracket_height(value: u16)`
    - `validate_bracket_width(value: u16)`
    - `validate_pin_diameter(value: u16)`
+   - `validate_pin_count(value: u16)` - Validates count is between 1 and 12
    - `validate_plate_thickness(value: u16)`
 
 All validators return `Result<(), PlateValidationError>`.

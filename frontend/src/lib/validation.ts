@@ -6,7 +6,7 @@
 
 import init, {
   wasm_validate_bolt_spacing,
-  wasm_validate_bolt_diameter,
+  wasm_validate_bolt_size,
   wasm_validate_bracket_height,
   wasm_validate_bracket_width,
   wasm_validate_pin_diameter,
@@ -80,11 +80,12 @@ export async function validateBoltSpacing(value: number): Promise<ValidationResu
 }
 
 /**
- * Validate bolt diameter value.
+ * Validate bolt size value.
+ * Accepts standard ISO metric bolt sizes: M3, M4, M5, M6, M8, M10, M12.
  */
-export async function validateBoltDiameter(value: number): Promise<ValidationResult> {
+export async function validateBoltSize(value: string): Promise<ValidationResult> {
   await initValidation();
-  return validate(() => wasm_validate_bolt_diameter(value));
+  return validate(() => wasm_validate_bolt_size(value));
 }
 
 /**
