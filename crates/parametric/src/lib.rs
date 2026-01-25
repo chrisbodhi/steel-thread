@@ -67,7 +67,7 @@ fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
          export boltSpacing = {}\n\
          export bracketHeight = {}\n\
          export bracketWidth = {}\n\
-         export material = \"{}\"\n\
+         export materialColor = \"{}\"\n\
          export pinDiameter = {}\n\
          export pinCount = {}",
         plate.plate_thickness.0,
@@ -122,7 +122,11 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
 
     // Copy KCL source files to temp dir
     if let Err(e) = copy_kcl_sources(temp_path) {
-        let msg = format!("Failed to copy KCL sources from {}: {}", get_kcl_source_dir(), e);
+        let msg = format!(
+            "Failed to copy KCL sources from {}: {}",
+            get_kcl_source_dir(),
+            e
+        );
         eprintln!("{}", msg);
         return Err(AllErrors::GeneratorError(msg));
     }

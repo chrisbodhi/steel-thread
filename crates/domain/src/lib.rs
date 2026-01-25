@@ -90,10 +90,14 @@ impl Material {
     /// Returns the material name as a lowercase string for KCL.
     pub const fn as_kcl_str(&self) -> &'static str {
         match self {
-            Material::Aluminum => "aluminum",
-            Material::StainlessSteel => "stainless_steel",
-            Material::CarbonSteel => "carbon_steel",
-            Material::Brass => "brass",
+            // Aluminum 6061-T6: Light silvery-gray with slight blue tint
+            Material::Aluminum => "#A9ACB6",
+            // Stainless Steel 304: Cool silver with slight blue undertone
+            Material::StainlessSteel => "#C0C4CE",
+            // Carbon Steel: Dark gray with slight brown undertone (uncoated)
+            Material::CarbonSteel => "#605E5C",
+            // Brass: Golden yellow metallic
+            Material::Brass => "#B5A642",
         }
     }
 }

@@ -7,32 +7,7 @@
 
 @settings(defaultLengthUnit = mm, kclVersion = 1.0)
 
-// Material colors - realistic appearance for each material type
-// Aluminum 6061-T6: Light silvery-gray with slight blue tint
-aluminumColor = appearance::hexString([169, 172, 182])
-// Stainless Steel 304: Cool silver with slight blue undertone
-stainlessSteelColor = appearance::hexString([192, 196, 206])
-// Carbon Steel: Dark gray with slight brown undertone (uncoated)
-carbonSteelColor = appearance::hexString([96, 94, 92])
-// Brass: Golden yellow metallic
-brassColor = appearance::hexString([181, 166, 66])
-
-// Helper function to get color based on material string
-fn getMaterialColor(mat) {
-  return if mat == "aluminum" {
-    aluminumColor
-  } else if mat == "stainless_steel" {
-    stainlessSteelColor
-  } else if mat == "carbon_steel" {
-    carbonSteelColor
-  } else if mat == "brass" {
-    brassColor
-  } else {
-    aluminumColor
-  }
-}
-
-export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, bracket_width, material, pin_diameter, pin_count) {
+export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, bracket_width, material_color, pin_diameter, pin_count) {
   centerCircles = startSketchOn(XZ)
     |> circle(radius = pin_diameter / 2, center = [50, 0])
     |> patternCircular2d(center = [0, 0], instances = pin_count, arcDegrees = 360)
@@ -69,13 +44,11 @@ export fn plate(plate_thickness, bolt_spacing, bolt_diameter, bracket_height, br
       |> close()
   }
 
-  materialColor = getMaterialColor(material)
-
   return startSketchOn(XZ)
     |> createRect()
     |> subtract2d(tool = centerCircles)
     |> subtract2d(tool = upperBoltCircles)
     |> subtract2d(tool = lowerBoltCircles)
     |> extrude(length = plate_thickness)
-    |> appearance(color = materialColor)
+    |> appearance(color = material_color)
 }
