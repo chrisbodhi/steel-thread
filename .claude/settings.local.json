@@ -15,7 +15,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(gh run watch:*)",
-      "Bash(terraform validate:*)"
+      "Bash(terraform validate:*)",
+      "Bash(terraform state show:*)",
+      "Bash(terraform state list:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
