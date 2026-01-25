@@ -67,28 +67,48 @@ export function ModelViewer({
       alt={alt}
       auto-rotate
       camera-controls
-      shadow-intensity="1"
+      shadow-intensity="1.2"
       environment-image="neutral"
-      exposure="1.2"
-      className="w-full h-full block rounded-md border"
+      exposure="1.3"
+      className="w-full h-full block"
       style={{
-        backgroundColor: "hsl(var(--muted))",
-        borderColor: "hsl(var(--border))",
-      }}
+        backgroundColor: "transparent",
+        "--poster-color": "transparent",
+      } as React.CSSProperties}
     >
       {!loaded && (
         <div
           slot="progress-bar"
-          className="flex items-center justify-center h-full flex-col gap-4"
+          className="absolute inset-0 flex items-center justify-center flex-col gap-6 bg-muted/30 backdrop-blur-sm"
         >
-          <div className="text-muted-foreground text-lg">
-            Loading 3D model...
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-primary/60 animate-pulse"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+            </div>
+            <div className="absolute -inset-2 rounded-3xl border border-primary/10 animate-ping" />
           </div>
-          <div className="w-48 h-2 bg-muted-foreground/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary animate-pulse"
-              style={{ width: "60%" }}
-            />
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium text-foreground/80">Loading model</p>
+            <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary/50 via-primary to-primary/50 rounded-full"
+                style={{
+                  width: "100%",
+                  animation: "shimmer 1.5s ease-in-out infinite",
+                  backgroundSize: "200% 100%",
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

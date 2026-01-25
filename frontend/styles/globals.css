@@ -6,6 +6,7 @@
 @import "./themes/blue.css";
 @import "./themes/green.css";
 @import "./themes/rose.css";
+@import "./themes/cyber.css";
 
 @custom-variant dark (&:is(.dark *));
 

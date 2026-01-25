@@ -10,6 +10,7 @@ export const COLOR_SCHEMES: ColorSchemeInfo[] = [
   { name: "blue", displayName: "Blue" },
   { name: "green", displayName: "Green" },
   { name: "rose", displayName: "Rose" },
+  { name: "cyber", displayName: "Cyber" },
 ];
 
 export const DEFAULT_COLOR_SCHEME: ColorScheme = "neutral";

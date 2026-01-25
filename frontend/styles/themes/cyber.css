@@ -1,0 +1,70 @@
+/* Cyber/Futuristic Theme - Deep space with neon accents */
+
+[data-theme="cyber"] {
+  /* Deep space background with purple undertones */
+  --background: oklch(0.08 0.02 280);
+  --foreground: oklch(0.95 0.01 280);
+
+  /* Cards with glass effect base */
+  --card: oklch(0.12 0.025 280 / 0.8);
+  --card-foreground: oklch(0.95 0.02 280);
+
+  /* Popover glass */
+  --popover: oklch(0.1 0.03 280 / 0.95);
+  --popover-foreground: oklch(0.95 0.01 280);
+
+  /* Primary - Electric cyan */
+  --primary: oklch(0.75 0.18 195);
+  --primary-foreground: oklch(0.1 0.02 195);
+
+  /* Secondary - Muted purple */
+  --secondary: oklch(0.25 0.05 280);
+  --secondary-foreground: oklch(0.9 0.02 280);
+
+  /* Muted - Deep purple gray */
+  --muted: oklch(0.18 0.03 280);
+  --muted-foreground: oklch(0.65 0.03 280);
+
+  /* Accent - Magenta glow */
+  --accent: oklch(0.65 0.2 330);
+  --accent-foreground: oklch(0.98 0.01 330);
+
+  /* Destructive - Hot red */
+  --destructive: oklch(0.55 0.22 25);
+
+  /* Border - Subtle cyan glow */
+  --border: oklch(0.35 0.08 195 / 0.4);
+  --input: oklch(0.15 0.03 280);
+  --ring: oklch(0.7 0.18 195);
+
+  /* Chart colors - Neon spectrum */
+  --chart-1: oklch(0.75 0.18 195);  /* Cyan */
+  --chart-2: oklch(0.65 0.2 330);   /* Magenta */
+  --chart-3: oklch(0.7 0.15 140);   /* Green */
+  --chart-4: oklch(0.7 0.18 60);    /* Orange */
+  --chart-5: oklch(0.65 0.2 280);   /* Purple */
+
+  /* Sidebar */
+  --sidebar: oklch(0.1 0.025 280);
+  --sidebar-foreground: oklch(0.9 0.02 280);
+  --sidebar-primary: oklch(0.75 0.18 195);
+  --sidebar-primary-foreground: oklch(0.1 0.02 195);
+  --sidebar-accent: oklch(0.2 0.04 280);
+  --sidebar-accent-foreground: oklch(0.9 0.02 280);
+  --sidebar-border: oklch(0.25 0.05 280 / 0.5);
+  --sidebar-ring: oklch(0.7 0.18 195);
+
+  /* Custom cyber variables */
+  --cyber-glow-cyan: oklch(0.75 0.18 195);
+  --cyber-glow-magenta: oklch(0.65 0.2 330);
+  --cyber-glow-purple: oklch(0.55 0.2 280);
+  --cyber-gradient-start: oklch(0.08 0.02 280);
+  --cyber-gradient-mid: oklch(0.06 0.03 260);
+  --cyber-gradient-end: oklch(0.05 0.02 300);
+}
+
+/* Cyber theme is dark-only, but support the class for consistency */
+[data-theme="cyber"].dark,
+.dark [data-theme="cyber"] {
+  /* Same as base - cyber is inherently dark */
+}
