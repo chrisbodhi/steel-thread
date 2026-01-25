@@ -8,9 +8,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower::ServiceExt;
+use web::{AppStateInner, MemoryCache};
 
 fn create_test_router() -> axum::Router {
-    let state = Arc::new(RwLock::new(HashMap::new()));
+    let state = Arc::new(AppStateInner {
+        sessions: RwLock::new(HashMap::new()),
+        cache: Arc::new(MemoryCache::new()),
+    });
     web::create_router(state)
 }
 

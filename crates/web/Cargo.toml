@@ -8,6 +8,8 @@ axum = { version = "0.8", features = ["json"] }
 aws-config = "1.5"
 aws-sdk-dynamodb = "1.73"
 aws-sdk-s3 = "1.73"
+async-trait = "0.1"
+chrono = "0.4"
 domain = { path = "../domain", features = ["openapi"] }
 parametric = { path = "../parametric" }
 serde = { version = "1.0", features = ["derive"] }
@@ -27,6 +29,7 @@ validation = { path = "../validation" }
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
 serde_json = "1.0"
+tempfile = "3"
 
 [lib]
 path = "src/lib.rs"
