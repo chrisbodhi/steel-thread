@@ -9,6 +9,7 @@ import init, {
   wasm_validate_bolt_size,
   wasm_validate_bracket_height,
   wasm_validate_bracket_width,
+  wasm_validate_material,
   wasm_validate_pin_diameter,
   wasm_validate_pin_count,
   wasm_validate_plate_thickness,
@@ -126,4 +127,13 @@ export async function validatePinCount(value: number): Promise<ValidationResult>
 export async function validatePlateThickness(value: number): Promise<ValidationResult> {
   await initValidation();
   return validate(() => wasm_validate_plate_thickness(value));
+}
+
+/**
+ * Validate material value.
+ * Accepts: aluminum, stainless_steel, carbon_steel, brass.
+ */
+export async function validateMaterial(value: string): Promise<ValidationResult> {
+  await initValidation();
+  return validate(() => wasm_validate_material(value));
 }

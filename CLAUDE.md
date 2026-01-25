@@ -290,6 +290,7 @@ const response = await fetch('/api/generate', {
     bolt_size: "M10",  // Standard ISO metric bolt size (M3, M4, M5, M6, M8, M10, M12)
     bracket_height: 40,
     bracket_width: 30,
+    material: "aluminum",  // Material: aluminum, stainless_steel, carbon_steel, or brass
     pin_diameter: 10,
     pin_count: 6,
     plate_thickness: 8,
@@ -308,6 +309,7 @@ The validation crate provides:
    - `validate_bolt_size(value: &str)` - Validates standard ISO metric sizes (M3, M4, M5, M6, M8, M10, M12)
    - `validate_bracket_height(value: u16)`
    - `validate_bracket_width(value: u16)`
+   - `validate_material(value: &str)` - Validates material types (aluminum, stainless_steel, carbon_steel, brass)
    - `validate_pin_diameter(value: u16)`
    - `validate_pin_count(value: u16)` - Validates count is between 1 and 12
    - `validate_plate_thickness(value: u16)`
@@ -316,10 +318,11 @@ All validators return `Result<(), PlateValidationError>`.
 
 ## Testing
 
-**Current test count: 28 fast tests + 3 ignored integration tests**
-- 18 validation unit tests
+**Current test count: 35 fast tests + 3 ignored integration tests**
+- 20 validation unit tests
 - 4 parametric unit tests
 - 3 parametric integration tests (ignored - require zoo CLI)
+- 5 web crate unit tests
 - 6 REST API integration tests
 
 ```bash

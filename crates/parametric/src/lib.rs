@@ -67,6 +67,7 @@ fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
          export boltSpacing = {}\n\
          export bracketHeight = {}\n\
          export bracketWidth = {}\n\
+         export material = \"{}\"\n\
          export pinDiameter = {}\n\
          export pinCount = {}",
         plate.plate_thickness.0,
@@ -74,6 +75,7 @@ fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
         plate.bolt_spacing.0,
         plate.bracket_height.0,
         plate.bracket_width.0,
+        plate.material.as_kcl_str(),
         plate.pin_diameter.0,
         plate.pin_count
     );
@@ -295,6 +297,8 @@ mod tests {
         assert!(content.contains("export boltSpacing"));
         assert!(content.contains("export bracketHeight"));
         assert!(content.contains("export bracketWidth"));
+        // Verify material is included (default is aluminum)
+        assert!(content.contains("export material = \"aluminum\""));
         assert!(content.contains("export pinDiameter"));
         assert!(content.contains("export pinCount = 6"));
 

@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use domain::{ActuatorPlate, BoltSize, Millimeters};
+use domain::{ActuatorPlate, BoltSize, Material, Millimeters};
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -44,6 +44,7 @@ async fn test_generate_endpoint_invalid_plate() {
         bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
+        material: Material::Aluminum,
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
@@ -81,6 +82,7 @@ async fn test_generate_endpoint_valid_plate() {
         bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
+        material: Material::Aluminum,
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
@@ -134,6 +136,7 @@ async fn test_validate_endpoint_valid_plate() {
         bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
+        material: Material::Aluminum,
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
@@ -168,6 +171,7 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
         bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
+        material: Material::Aluminum,
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
@@ -206,6 +210,7 @@ async fn test_validate_endpoint_invalid_pin_count() {
         bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
+        material: Material::Aluminum,
         pin_diameter: Millimeters(10),
         pin_count: 13, // Invalid! Max is 12
         plate_thickness: Millimeters(8),
