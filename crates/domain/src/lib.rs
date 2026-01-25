@@ -140,7 +140,7 @@ impl ActuatorPlate {
 
         let mut hasher = Sha256::new();
         hasher.update(self.bolt_spacing.0.to_le_bytes());
-        hasher.update(self.bolt_diameter.0.to_le_bytes());
+        hasher.update(self.bolt_size.nominal_diameter_mm().to_le_bytes());
         hasher.update(self.bracket_height.0.to_le_bytes());
         hasher.update(self.bracket_width.0.to_le_bytes());
         hasher.update(self.pin_diameter.0.to_le_bytes());
