@@ -242,7 +242,12 @@ pub async fn generate_plate_model(
             gltf_url,
             session_id,
         };
-        return (StatusCode::OK, Json(res)).into_response();
+        return (
+            StatusCode::OK,
+            [(header::HeaderName::from_static("x-cache"), "HIT")],
+            Json(res),
+        )
+            .into_response();
     }
 
     tracing::info!("Cache miss for key: {}, generating model", cache_key);
@@ -285,7 +290,12 @@ pub async fn generate_plate_model(
                 gltf_url,
                 session_id,
             };
-            (StatusCode::OK, Json(res)).into_response()
+            (
+                StatusCode::OK,
+                [(header::HeaderName::from_static("x-cache"), "MISS")],
+                Json(res),
+            )
+                .into_response()
         }
         Err(e) => {
             tracing::error!("generation error: {:?}", e);
