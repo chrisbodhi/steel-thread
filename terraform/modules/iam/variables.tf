@@ -10,16 +10,11 @@ variable "environment" {
 }
 
 variable "s3_bucket_arn" {
-  description = "ARN of the S3 bucket for generated files"
+  description = "ARN of the S3 bucket for cached files"
   type        = string
 }
 
 variable "dynamodb_table_arn" {
   description = "ARN of the DynamoDB cache table"
-  type        = string
-}
-
-variable "secrets_arn" {
-  description = "ARN of the Secrets Manager secret containing zoo token"
   type        = string
 }

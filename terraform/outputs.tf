@@ -34,6 +34,11 @@ output "cloudwatch_dashboard_name" {
   value       = module.cloudwatch.dashboard_name
 }
 
+output "iam_user_name" {
+  description = "IAM user name for Lightsail cache access"
+  value       = module.iam.user_name
+}
+
 output "lightsail_key_pair_name" {
   description = "SSH key pair name for Lightsail instance"
   value       = module.lightsail.key_pair_name
@@ -55,7 +60,13 @@ output "next_steps" {
     3. Deploy zoo token to instance:
        just deploy-zoo-token
 
-    4. Deploy application:
+    4. Create access keys for cache (IAM user: ${module.iam.user_name}):
+       - Go to AWS Console > IAM > Users > ${module.iam.user_name}
+       - Create access key, then SSH to instance and add to /opt/platerator/.env:
+         AWS_ACCESS_KEY_ID=xxx
+         AWS_SECRET_ACCESS_KEY=xxx
+
+    5. Deploy application:
        # Push code to GitHub (triggers build)
        git push origin master
 
@@ -63,13 +74,13 @@ output "next_steps" {
        # Then download and deploy
        just deploy
 
-    5. Visit your app:
+    6. Visit your app:
        http://${module.lightsail.public_ip}
 
-    6. SSH to instance:
+    7. SSH to instance:
        ${module.lightsail.ssh_command}
 
-    7. View CloudWatch dashboard:
+    8. View CloudWatch dashboard:
        https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${module.cloudwatch.dashboard_name}
   EOT
 }

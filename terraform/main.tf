@@ -70,6 +70,16 @@ module "cloudwatch" {
   environment    = var.environment
 }
 
+# IAM user for Lightsail instance to access S3/DynamoDB
+module "iam" {
+  source = "./modules/iam"
+
+  project_name       = local.project_slug
+  s3_bucket_arn      = module.s3.bucket_arn
+  dynamodb_table_arn = module.dynamodb.table_arn
+  environment        = var.environment
+}
+
 # Lightsail instance
 module "lightsail" {
   source = "./modules/lightsail"
