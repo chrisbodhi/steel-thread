@@ -6,39 +6,141 @@
   }
 
   body {
-    @apply grid place-items-center min-w-[320px] min-h-screen relative m-0 bg-background text-foreground;
+    @apply min-w-[320px] min-h-screen relative m-0 bg-background text-foreground overflow-x-hidden;
   }
 }
 
-/* cool Bun background animation 😎 */
+/* Futuristic animated gradient background */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
-  opacity: 0.05;
-  background: url("./logo.svg");
-  background-size: 256px;
-  transform: rotate(-12deg) scale(1.35);
-  animation: slide 30s linear infinite;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse at 20% 0%, oklch(0.25 0.08 280 / 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, oklch(0.2 0.1 195 / 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, oklch(0.15 0.05 330 / 0.2) 0%, transparent 70%);
+  animation: gradient-shift 20s ease-in-out infinite;
   pointer-events: none;
 }
 
-@keyframes slide {
-  from {
-    background-position: 0 0;
+/* Subtle grid overlay for depth */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.03;
+  background-image:
+    linear-gradient(to right, currentColor 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Cyber theme specific background */
+[data-theme="cyber"] body::before {
+  background:
+    radial-gradient(ellipse at 10% 10%, oklch(0.35 0.15 195 / 0.3) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 20%, oklch(0.3 0.18 330 / 0.25) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, oklch(0.25 0.12 280 / 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 60%, oklch(0.2 0.1 195 / 0.2) 0%, transparent 40%);
+  animation: gradient-shift 15s ease-in-out infinite;
+}
+
+[data-theme="cyber"] body::after {
+  opacity: 0.06;
+  background-image:
+    linear-gradient(to right, oklch(0.5 0.15 195 / 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.5 0.15 195 / 0.5) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
   }
-  to {
-    background-position: 256px 224px;
+  25% {
+    transform: scale(1.05) rotate(1deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(0deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(-1deg);
   }
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0);
+/* Glow pulse animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    filter: blur(20px);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    opacity: 1;
+    filter: blur(25px);
+  }
+}
+
+/* Border glow animation */
+@keyframes border-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 5px oklch(0.7 0.15 195 / 0.3),
+      0 0 10px oklch(0.7 0.15 195 / 0.2),
+      inset 0 0 5px oklch(0.7 0.15 195 / 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 10px oklch(0.7 0.15 195 / 0.5),
+      0 0 20px oklch(0.7 0.15 195 / 0.3),
+      inset 0 0 10px oklch(0.7 0.15 195 / 0.15);
+  }
+}
+
+/* Scan line effect for cyber theme */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+[data-theme="cyber"] .scanline::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    oklch(0.7 0.15 195 / 0.03) 50%,
+    transparent 100%
+  );
+  height: 10px;
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
@@ -47,5 +149,114 @@ body::before {
   ::before,
   ::after {
     animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom utility classes for glass morphism */
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-xl;
+    background: oklch(from var(--card) l c h / 0.7);
+    border: 1px solid oklch(from var(--border) l c h / 0.3);
+  }
+
+  .glass-strong {
+    @apply backdrop-blur-2xl;
+    background: oklch(from var(--card) l c h / 0.85);
+    border: 1px solid oklch(from var(--border) l c h / 0.4);
+  }
+
+  .glow-cyan {
+    box-shadow:
+      0 0 20px oklch(0.7 0.15 195 / 0.3),
+      0 0 40px oklch(0.7 0.15 195 / 0.15);
+  }
+
+  .glow-magenta {
+    box-shadow:
+      0 0 20px oklch(0.65 0.2 330 / 0.3),
+      0 0 40px oklch(0.65 0.2 330 / 0.15);
+  }
+
+  .glow-sm {
+    box-shadow:
+      0 0 10px oklch(from var(--primary) l c h / 0.3),
+      0 0 20px oklch(from var(--primary) l c h / 0.15);
+  }
+
+  .text-glow {
+    text-shadow:
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 40px currentColor;
+  }
+
+  .border-glow {
+    box-shadow:
+      0 0 5px oklch(from var(--border) l c h / 0.5),
+      inset 0 0 5px oklch(from var(--border) l c h / 0.2);
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      oklch(0.7 0.15 195) 0%,
+      oklch(0.65 0.2 330) 50%,
+      oklch(0.55 0.2 280) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Cyber theme specific component enhancements */
+[data-theme="cyber"] {
+  /* Glowing focus states */
+  & input:focus,
+  & select:focus,
+  & button:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px oklch(0.7 0.15 195 / 0.5),
+      0 0 20px oklch(0.7 0.15 195 / 0.3);
+  }
+
+  /* Enhanced button hover */
+  & button:not(:disabled):hover {
+    box-shadow:
+      0 0 15px oklch(0.7 0.15 195 / 0.4),
+      0 0 30px oklch(0.7 0.15 195 / 0.2);
+  }
+
+  /* Card glow on hover */
+  & [data-card]:hover {
+    box-shadow:
+      0 0 30px oklch(0.7 0.15 195 / 0.15),
+      0 0 60px oklch(0.65 0.2 330 / 0.1);
   }
 }

@@ -1,4 +1,4 @@
-export type ColorScheme = "neutral" | "blue" | "green" | "rose";
+export type ColorScheme = "neutral" | "blue" | "green" | "rose" | "cyber";
 export type ThemeMode = "light" | "dark" | "system";
 
 export interface ThemeContextValue {

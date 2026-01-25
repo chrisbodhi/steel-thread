@@ -54,7 +54,8 @@ export function ThemeProvider({
   });
 
   const systemPreference = useSystemPreference();
-  const resolvedMode = mode === "system" ? systemPreference : mode;
+  // Cyber theme forces dark mode
+  const resolvedMode = colorScheme === "cyber" ? "dark" : (mode === "system" ? systemPreference : mode);
 
   useEffect(() => {
     const root = document.documentElement;
