@@ -9,14 +9,21 @@ import {
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Button } from "./components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
 import { ThemePicker } from "./components/ui/theme-picker";
 
 import "./index.css";
-import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
+import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from "react";
 import { ModelViewer } from "./components/model-viewer";
 import {
   validateBoltSpacing,
-  validateBoltDiameter,
+  validateBoltSize,
   validateBracketHeight,
   validateBracketWidth,
   validatePinDiameter,
@@ -31,12 +38,14 @@ function Combined({
   defaultValue = "10",
   validator,
   onValidationChange,
+  unit,
 }: {
   forProp: string;
   name: string;
   defaultValue?: string;
   validator: (value: number) => Promise<ValidationResult>;
   onValidationChange?: (fieldName: string, isValid: boolean) => void;
+  unit?: string;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
@@ -73,7 +82,10 @@ function Combined({
 
   return (
     <div>
-      <Label htmlFor={forProp}>{name}</Label>
+      <Label htmlFor={forProp}>
+        {name}
+        {unit && <span className="text-muted-foreground"> ({unit})</span>}
+      </Label>
       <Input
         id={forProp}
         type="number"
@@ -95,6 +107,71 @@ function Combined({
   );
 }
 
+const BOLT_SIZES = ["M3", "M4", "M5", "M6", "M8", "M10", "M12"] as const;
+
+function BoltSizeSelect({
+  forProp,
+  name,
+  defaultValue = "M10",
+  onValidationChange,
+}: {
+  forProp: string;
+  name: string;
+  defaultValue?: string;
+  onValidationChange?: (fieldName: string, isValid: boolean) => void;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    // Validate on value change
+    const validateValue = async () => {
+      if (value && touched) {
+        const result = await validateBoltSize(value);
+        setValidationResult(result);
+        onValidationChange?.(forProp, result.valid);
+      }
+    };
+    validateValue();
+  }, [value, touched, forProp, onValidationChange]);
+
+  const handleChange = (newValue: string) => {
+    setValue(newValue);
+    if (!touched) {
+      setTouched(true);
+    }
+  };
+
+  return (
+    <div>
+      <Label htmlFor={forProp}>{name}</Label>
+      <Select name={forProp} value={value} onValueChange={handleChange}>
+        <SelectTrigger
+          id={forProp}
+          className={
+            touched && !validationResult.valid
+              ? "border-red-500 focus-visible:ring-red-500"
+              : ""
+          }
+        >
+          <SelectValue placeholder="Select bolt size" />
+        </SelectTrigger>
+        <SelectContent>
+          {BOLT_SIZES.map((size) => (
+            <SelectItem key={size} value={size}>
+              {size}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {touched && !validationResult.valid && (
+        <p className="text-xs text-red-500 mt-1">{validationResult.error}</p>
+      )}
+    </div>
+  );
+}
+
 export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -102,7 +179,7 @@ export function App() {
   const [modelSrc, setModelSrc] = useState<string | null>(null);
   const [fieldValidationState, setFieldValidationState] = useState<Record<string, boolean>>({
     boltSpacing: true,
-    boltDiameter: true,
+    boltSize: true,
     bracketHeight: true,
     bracketWidth: true,
     pinDiameter: true,
@@ -110,12 +187,12 @@ export function App() {
     plateThickness: true,
   });
 
-  const handleValidationChange = (fieldName: string, isValid: boolean) => {
+  const handleValidationChange = useCallback((fieldName: string, isValid: boolean) => {
     setFieldValidationState((prev) => ({
       ...prev,
       [fieldName]: isValid,
     }));
-  };
+  }, []);
 
   const isFormValid = Object.values(fieldValidationState).every((isValid) => isValid);
 
@@ -132,7 +209,7 @@ export function App() {
 
       const body = JSON.stringify({
         bolt_spacing: Number(formData.get("boltSpacing")),
-        bolt_diameter: Number(formData.get("boltDiameter")),
+        bolt_size: formData.get("boltSize"),
         bracket_height: Number(formData.get("bracketHeight")),
         bracket_width: Number(formData.get("bracketWidth")),
         pin_diameter: Number(formData.get("pinDiameter")),
@@ -209,12 +286,12 @@ export function App() {
                   defaultValue="60"
                   validator={validateBoltSpacing}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
-                <Combined
-                  forProp="boltDiameter"
-                  name="Bolt Diameter"
-                  defaultValue="10"
-                  validator={validateBoltDiameter}
+                <BoltSizeSelect
+                  forProp="boltSize"
+                  name="Bolt Size"
+                  defaultValue="M10"
                   onValidationChange={handleValidationChange}
                 />
                 <Combined
@@ -223,6 +300,7 @@ export function App() {
                   defaultValue="400"
                   validator={validateBracketHeight}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="bracketWidth"
@@ -230,6 +308,7 @@ export function App() {
                   defaultValue="300"
                   validator={validateBracketWidth}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="pinDiameter"
@@ -237,6 +316,7 @@ export function App() {
                   defaultValue="10"
                   validator={validatePinDiameter}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
                 <Combined
                   forProp="pinCount"
@@ -251,6 +331,7 @@ export function App() {
                   defaultValue="8"
                   validator={validatePlateThickness}
                   onValidationChange={handleValidationChange}
+                  unit="mm"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading || !isFormValid}>

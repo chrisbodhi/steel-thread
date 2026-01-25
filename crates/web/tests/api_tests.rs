@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use domain::{ActuatorPlate, Millimeters};
+use domain::{ActuatorPlate, BoltSize, Millimeters};
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -41,7 +41,7 @@ async fn test_generate_endpoint_invalid_plate() {
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(0), // Invalid!
-        bolt_diameter: Millimeters(10),
+        bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),
@@ -78,7 +78,7 @@ async fn test_generate_endpoint_valid_plate() {
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(60),
-        bolt_diameter: Millimeters(10),
+        bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),
@@ -131,7 +131,7 @@ async fn test_validate_endpoint_valid_plate() {
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(60),
-        bolt_diameter: Millimeters(10),
+        bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),
@@ -165,7 +165,7 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(0), // Invalid!
-        bolt_diameter: Millimeters(10),
+        bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),
@@ -203,7 +203,7 @@ async fn test_validate_endpoint_invalid_pin_count() {
 
     let plate = ActuatorPlate {
         bolt_spacing: Millimeters(60),
-        bolt_diameter: Millimeters(10),
+        bolt_size: BoltSize::M10,
         bracket_height: Millimeters(40),
         bracket_width: Millimeters(30),
         pin_diameter: Millimeters(10),

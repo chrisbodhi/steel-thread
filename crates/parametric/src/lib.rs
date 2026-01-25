@@ -57,6 +57,9 @@ fn get_kcl_source_dir() -> String {
 
 /// Write params.kcl to the specified directory
 fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
+    // Use clearance hole diameter for mounting bolts
+    let bolt_hole_diameter = plate.bolt_size.clearance_hole_diameter_mm();
+
     let content = format!(
         "@settings(defaultLengthUnit = mm, kclVersion = 1.0)\n\n\
          export plateThickness = {}\n\
@@ -67,7 +70,7 @@ fn write_params_file(plate: &ActuatorPlate, dir: &Path) -> std::io::Result<()> {
          export pinDiameter = {}\n\
          export pinCount = {}",
         plate.plate_thickness.0,
-        plate.bolt_diameter.0,
+        bolt_hole_diameter,
         plate.bolt_spacing.0,
         plate.bracket_height.0,
         plate.bracket_width.0,
@@ -226,7 +229,7 @@ mod tests {
     #[test]
     fn test_generate_step_fails_with_invalid_plate() {
         let mut plate = ActuatorPlate::default();
-        plate.bolt_diameter = Millimeters(0);
+        plate.bolt_spacing = Millimeters(0); // Invalid bolt spacing
 
         let temp_dir = TempDir::new().unwrap();
         let result = generate_step_in_dir(&plate, temp_dir.path());
@@ -287,6 +290,8 @@ mod tests {
         assert!(content.starts_with("@settings(defaultLengthUnit = mm, kclVersion = 1.0)"));
         assert!(content.contains("export plateThickness"));
         assert!(content.contains("export boltDiameter"));
+        // Verify that bolt diameter uses clearance hole size (M10 = 11.0mm clearance)
+        assert!(content.contains("export boltDiameter = 11"));
         assert!(content.contains("export boltSpacing"));
         assert!(content.contains("export bracketHeight"));
         assert!(content.contains("export bracketWidth"));
@@ -299,7 +304,7 @@ mod tests {
     #[test]
     fn test_generate_gltf_fails_with_invalid_plate() {
         let mut plate = ActuatorPlate::default();
-        plate.bolt_diameter = Millimeters(0);
+        plate.plate_thickness = Millimeters(0); // Invalid plate thickness
 
         let temp_dir = TempDir::new().unwrap();
         let result = generate_gltf_in_dir(&plate, temp_dir.path());

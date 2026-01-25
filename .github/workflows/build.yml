@@ -61,6 +61,12 @@ jobs:
       - name: Build Rust binary
         run: cargo build --release --bin web
 
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM module
+        run: wasm-pack build crates/validation --target web --out-dir ../../frontend/src/wasm-validation --no-typescript
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
 

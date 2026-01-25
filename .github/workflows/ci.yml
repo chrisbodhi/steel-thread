@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  test-rust:
+    name: Test Rust
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-v2-
+
+      - name: Run tests
+        run: cargo test --all
+
+      - name: Run clippy
+        run: cargo clippy --all -- -D warnings
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM module
+        run: wasm-pack build crates/validation --target web --out-dir ../../frontend/src/wasm-validation --no-typescript
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun run build
+
+  # Optional: Add e2e tests in a separate job if needed
+  # test-e2e:
+  #   name: E2E Tests
+  #   runs-on: ubuntu-22.04
+  #   needs: [test-rust, test-frontend]
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #
+  #     - name: Setup Bun
+  #       uses: oven-sh/setup-bun@v1
+  #
+  #     - name: Install Playwright
+  #       run: |
+  #         cd frontend
+  #         bun install
+  #         bunx playwright install --with-deps chromium
+  #
+  #     - name: Run e2e tests
+  #       run: |
+  #         cd frontend
+  #         bun test:e2e

@@ -192,6 +192,11 @@ deploy-lightsail:
     echo "✅ Deployment complete!"
     echo "🎉 Visit: http://$LIGHTSAIL_IP"
 
+    echo ""
+    echo "🗑️ Cleaning up..."
+    rm platerator-*.tar.gz
+    echo "🗑️ Cleanup complete!"
+
 # Full deployment workflow: download + deploy
 deploy: download-build deploy-lightsail
 

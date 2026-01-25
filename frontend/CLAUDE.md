@@ -82,7 +82,7 @@ const response = await fetch('/api/generate', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     bolt_spacing: 60,
-    bolt_diameter: 10,
+    bolt_size: "M10",  // Standard ISO metric bolt size
     bracket_height: 40,
     bracket_width: 30,
     pin_diameter: 10,
