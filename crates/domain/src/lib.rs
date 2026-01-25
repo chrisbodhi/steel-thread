@@ -154,6 +154,7 @@ pub struct ActuatorPlate {
 }
 
 impl ActuatorPlate {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         bolt_spacing: Millimeters,
         bolt_size: BoltSize,
