@@ -264,9 +264,9 @@ mod tests {
 
     #[test]
     fn test_material_kcl_str() {
-        assert_eq!(Material::Aluminum.as_kcl_str(), "aluminum");
-        assert_eq!(Material::StainlessSteel.as_kcl_str(), "stainless_steel");
-        assert_eq!(Material::CarbonSteel.as_kcl_str(), "carbon_steel");
-        assert_eq!(Material::Brass.as_kcl_str(), "brass");
+        assert_eq!(Material::Aluminum.as_kcl_str(), "#A9ACB6");
+        assert_eq!(Material::StainlessSteel.as_kcl_str(), "#C0C4CE");
+        assert_eq!(Material::CarbonSteel.as_kcl_str(), "#605E5C");
+        assert_eq!(Material::Brass.as_kcl_str(), "#B5A642");
     }
 }
