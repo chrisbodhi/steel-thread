@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "./components/ui/select";
 import { ThemePicker } from "./components/ui/theme-picker";
+import { AboutSection } from "./components/about-section";
 
 import "./index.css";
 import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from "react";
@@ -394,7 +395,8 @@ export function App() {
             overflow-hidden lg:overflow-visible
           `}
         >
-          <div className="h-full p-4 lg:p-6 lg:pr-8">
+          <div className="h-full p-4 lg:p-6 lg:pr-8 space-y-4">
+            <AboutSection />
             <Card className="h-full backdrop-blur-xl bg-card/80 border-border/50 shadow-2xl" data-card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-base lg:text-lg font-semibold flex items-center gap-2">
