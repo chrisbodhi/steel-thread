@@ -58,7 +58,56 @@ use uuid::Uuid;
     info(
         title = "Platerator API",
         version = "1.0.0",
-        description = "REST API for generating actuator plate STEP and glTF model files",
+        description = r#"
+# Platerator API
+
+Welcome to the Platerator API - an automated mounting plate design service for linear actuators.
+
+## What is Platerator?
+
+Platerator generates custom mounting plates for linear actuators based on your specifications. Configure dimensions, materials, and fasteners, then download production-ready CAD files in STEP format along with 3D preview models in glTF format.
+
+## Who is this for?
+
+- **Mechanical Engineers**: Rapidly prototype mounting solutions without manual CAD work
+- **Robotics Developers**: Standardize actuator mounting across your robot designs
+- **Manufacturers**: Generate custom brackets for small batch production
+- **Automation Engineers**: Design mounting hardware for industrial automation projects
+
+## What's a linear actuator?
+
+A linear actuator is a device that creates motion in a straight line (as opposed to rotational motion). Common types include:
+- Electric motor-driven actuators (ball screw, lead screw)
+- Pneumatic cylinders
+- Hydraulic cylinders
+
+They're used in industrial automation, robotics, adjustable furniture, vehicle systems, and countless other applications.
+
+## Why mounting plates?
+
+Linear actuators need secure attachment points for both the actuator body and the extending rod. A well-designed mounting plate provides:
+- **Structural support**: Withstands operational forces
+- **Proper alignment**: Ensures actuator operates smoothly
+- **Standardized bolt patterns**: Compatible with common fastener sizes
+- **Material selection**: Choose based on strength, weight, and corrosion resistance
+
+This API automates the tedious CAD work of creating these custom brackets.
+
+## Quick Start
+
+1. **Validate your parameters**: POST to `/api/validate` with your plate configuration
+2. **Generate the model**: POST to `/api/generate` to create STEP and glTF files
+3. **Download files**: Use the returned URLs to download your CAD files
+
+## Features
+
+- Real-time validation of all parameters
+- Support for standard ISO metric bolt sizes (M3-M12)
+- Multiple material options (aluminum, stainless steel, carbon steel, brass)
+- Automatic caching for faster repeated requests
+- Production-ready STEP files for manufacturing
+- glTF preview files for 3D visualization
+        "#,
         contact(
             name = "Platerator Team"
         )
