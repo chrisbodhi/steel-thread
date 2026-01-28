@@ -101,16 +101,12 @@ This API automates the tedious CAD work of creating these custom brackets.
 
 ## Features
 
-- ✅ Real-time validation of all parameters
-- ✅ Support for standard ISO metric bolt sizes (M3-M12)
-- ✅ Multiple material options (aluminum, stainless steel, carbon steel, brass)
-- ✅ Automatic caching for faster repeated requests
-- ✅ Production-ready STEP files for manufacturing
-- ✅ glTF preview files for 3D visualization
-
-## Support
-
-Questions or issues? Contact the Platerator team.
+- Real-time validation of all parameters
+- Support for standard ISO metric bolt sizes (M3-M12)
+- Multiple material options (aluminum, stainless steel, carbon steel, brass)
+- Automatic caching for faster repeated requests
+- Production-ready STEP files for manufacturing
+- glTF preview files for 3D visualization
         "#,
         contact(
             name = "Platerator Team"
