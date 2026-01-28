@@ -48,7 +48,7 @@ export function AboutSection() {
       </CardHeader>
 
       {isExpanded && (
-        <CardContent className="space-y-4 text-xs lg:text-sm animate-in fade-in slide-in-from-top-2 duration-200">
+        <CardContent className="space-y-4 text-xs lg:text-sm animate-in fade-in slide-in-from-top-2 duration-200 max-h-[300px] overflow-y-auto">
           <div>
             <h4 className="font-semibold text-primary mb-1.5">
               Automated Mounting Plate Design
@@ -97,7 +97,7 @@ export function AboutSection() {
 
           <div className="pt-2 border-t border-border/50">
             <p className="text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-              💡 Tip: Start with default values and experiment with the controls.
+              Tip: Start with default values and experiment with the controls.
               The 3D preview updates when you generate a model.
             </p>
           </div>
