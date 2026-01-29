@@ -243,6 +243,19 @@ logs:
     echo "📋 Tailing Platerator logs (Ctrl+C to stop)..."
     ssh ubuntu@$LIGHTSAIL_IP 'journalctl -u platerator -f'
 
+# View Caddy access logs
+logs-caddy:
+    #!/usr/bin/env bash
+    set -e
+    export AWS_REGION=us-east-1
+    LIGHTSAIL_IP=$(cd terraform && terraform output -raw lightsail_public_ip 2>&1)
+    if [ -z "$LIGHTSAIL_IP" ] || [[ "$LIGHTSAIL_IP" == *"Warning"* ]] || [[ "$LIGHTSAIL_IP" == *"No outputs"* ]]; then
+        echo "❌ No Lightsail instance found. Run 'just tf-apply' first."
+        exit 1
+    fi
+    echo "📋 Tailing Caddy logs (Ctrl+C to stop)..."
+    ssh ubuntu@$LIGHTSAIL_IP 'journalctl -u caddy -f'
+
 # Show deployment info
 info:
     #!/usr/bin/env bash
