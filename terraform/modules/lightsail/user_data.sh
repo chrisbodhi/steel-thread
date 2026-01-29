@@ -62,13 +62,9 @@ SYSTEMD
 systemctl daemon-reload
 systemctl enable platerator
 
-# Configure Caddy for reverse proxy
+# Configure Caddy for reverse proxy with automatic HTTPS
 cat > /etc/caddy/Caddyfile <<'CADDY'
-{
-    auto_https off
-}
-
-:80 {
+platerator.newschematic.org {
     reverse_proxy localhost:8080
 }
 CADDY
