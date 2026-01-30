@@ -105,6 +105,18 @@ pub struct Order {
 
     /// Error message if failed
     pub error: Option<String>,
+
+    /// If this is a re-order, reference to the original order
+    pub original_order_id: Option<String>,
+
+    /// Whether this order is a courtesy re-order (no charge)
+    pub is_courtesy_reorder: bool,
+
+    /// Who initiated the re-order (service account ID)
+    pub reordered_by: Option<String>,
+
+    /// Reason for re-order (for audit trail)
+    pub reorder_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
@@ -148,6 +160,10 @@ pub struct OrderResult {
 | `result` | Map | - | STEP/glTF file references |
 | `error` | String | - | Failure reason |
 | `ttl` | Number | - | Auto-cleanup for old orders |
+| `original_order_id` | String | - | Reference to original order (for re-orders) |
+| `is_courtesy_reorder` | Boolean | - | True if no-charge re-order |
+| `reordered_by` | String | - | Service account that initiated re-order |
+| `reorder_reason` | String | - | Audit trail for re-order |
 
 **Global Secondary Index (GSI)**: `status-position-index`
 - Partition key: `status`
@@ -195,6 +211,7 @@ new_position = p + 1.0
 | POST | `/api/orders/claim` | Printer claims next order |
 | POST | `/api/orders/{id}/complete` | Mark order completed |
 | POST | `/api/orders/{id}/fail` | Mark order failed |
+| POST | `/api/orders/{id}/reorder` | **[Authenticated]** Re-order (duplicate at no cost) |
 
 ### Request/Response Examples
 
@@ -307,6 +324,249 @@ Content-Type: application/json
   }
 }
 ```
+
+#### Re-order (Authenticated Service Endpoint)
+
+Creates a new order duplicating an existing order's configuration, marked as a courtesy re-order (no charge to customer). This endpoint requires service account authentication.
+
+```http
+POST /api/orders/550e8400-.../reorder
+Authorization: Bearer <service-account-token>
+Content-Type: application/json
+
+{
+  "reason": "Print quality issue detected by QA system",
+  "priority": "high"  // Optional: "high" places at front of queue
+}
+```
+
+Response:
+```json
+{
+  "order_id": "770e8400-e29b-41d4-a716-446655440000",
+  "original_order_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "pending",
+  "position": 0.5,
+  "is_courtesy_reorder": true,
+  "reordered_by": "ai-qa-system",
+  "reorder_reason": "Print quality issue detected by QA system",
+  "plate": { ... },
+  "created_at": "2026-01-30T14:00:00Z"
+}
+```
+
+**Authentication**: Requires a valid service account token (see [Service Account Authentication](#service-account-authentication)).
+
+**Behavior**:
+- Creates a new order with the same `plate` configuration as the original
+- Sets `is_courtesy_reorder: true` (excluded from billing)
+- Links to original via `original_order_id` for audit trail
+- Records `reordered_by` (service account ID) and `reorder_reason`
+- Optional `priority: "high"` places order at front of queue
+
+## Service Account Authentication
+
+Certain endpoints require service account authentication for machine-to-machine access. This is used by:
+
+- **AI QA System**: Re-orders for quality issues
+- **Printer System**: Claiming and completing orders
+- **Internal Tools**: Administrative operations
+
+### Authentication Flow
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   AI System     │────▶│   Platerator    │────▶│   Token Store   │
+│   (Service)     │     │   API           │     │   (DynamoDB)    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                       │
+        │  Authorization:       │  Validate token,
+        │  Bearer <token>       │  check permissions
+        │                       │
+```
+
+### Token Format
+
+Service account tokens are pre-shared secrets stored in environment variables or a secrets manager:
+
+```
+PLATERATOR_SERVICE_TOKEN_AI_QA=sk_service_abc123...
+PLATERATOR_SERVICE_TOKEN_PRINTER=sk_service_def456...
+```
+
+### Implementation
+
+```rust
+/// Service account identity extracted from token
+#[derive(Debug, Clone)]
+pub struct ServiceAccount {
+    pub id: String,           // e.g., "ai-qa-system"
+    pub permissions: Vec<Permission>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Permission {
+    /// Can create courtesy re-orders
+    ReorderCreate,
+    /// Can claim orders for processing
+    OrderClaim,
+    /// Can mark orders complete/failed
+    OrderComplete,
+    /// Can view all orders (admin)
+    OrderReadAll,
+}
+
+/// Axum extractor for authenticated service requests
+pub struct AuthenticatedService(pub ServiceAccount);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for AuthenticatedService
+where
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, Json<ErrorResponse>);
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let auth_header = parts
+            .headers
+            .get(AUTHORIZATION)
+            .and_then(|h| h.to_str().ok())
+            .ok_or((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
+                success: false,
+                errors: vec!["Missing Authorization header".into()],
+            })))?;
+
+        let token = auth_header
+            .strip_prefix("Bearer ")
+            .ok_or((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
+                success: false,
+                errors: vec!["Invalid Authorization format".into()],
+            })))?;
+
+        // Validate token against configured service accounts
+        let service = validate_service_token(token)
+            .ok_or((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
+                success: false,
+                errors: vec!["Invalid service token".into()],
+            })))?;
+
+        Ok(AuthenticatedService(service))
+    }
+}
+```
+
+### Re-order Handler
+
+```rust
+#[utoipa::path(
+    post,
+    path = "/api/orders/{order_id}/reorder",
+    tag = "orders",
+    security(("service_token" = [])),
+    request_body = ReorderRequest,
+    responses(
+        (status = 201, description = "Re-order created", body = Order),
+        (status = 401, description = "Invalid or missing service token"),
+        (status = 403, description = "Insufficient permissions"),
+        (status = 404, description = "Original order not found")
+    )
+)]
+async fn reorder(
+    State(state): State<AppState>,
+    Path(order_id): Path<String>,
+    AuthenticatedService(service): AuthenticatedService,
+    Json(request): Json<ReorderRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<ErrorResponse>)> {
+    // Check permission
+    if !service.permissions.contains(&Permission::ReorderCreate) {
+        return Err((StatusCode::FORBIDDEN, Json(ErrorResponse {
+            success: false,
+            errors: vec!["Service account lacks ReorderCreate permission".into()],
+        })));
+    }
+
+    // Get original order
+    let original = state.queue
+        .get(&order_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
+            success: false,
+            errors: vec![e.to_string()],
+        })))?
+        .ok_or((StatusCode::NOT_FOUND, Json(ErrorResponse {
+            success: false,
+            errors: vec!["Order not found".into()],
+        })))?;
+
+    // Create new order from original
+    let mut new_order = Order::new(original.plate.clone());
+    new_order.original_order_id = Some(order_id);
+    new_order.is_courtesy_reorder = true;
+    new_order.reordered_by = Some(service.id);
+    new_order.reorder_reason = request.reason;
+
+    // Handle priority placement
+    if request.priority == Some("high".to_string()) {
+        let pending = state.queue.list_pending().await?;
+        if let Some(first) = pending.first() {
+            new_order.position = first.position - 1.0;
+        }
+    }
+
+    let created = state.queue.enqueue(new_order).await?;
+
+    Ok((StatusCode::CREATED, Json(created)))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ReorderRequest {
+    /// Reason for the re-order (required for audit)
+    pub reason: Option<String>,
+    /// Priority: "high" to place at front of queue
+    pub priority: Option<String>,
+}
+```
+
+### Service Account Configuration
+
+Service accounts are configured via environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `SERVICE_ACCOUNT_AI_QA_TOKEN` | Token for AI QA system |
+| `SERVICE_ACCOUNT_AI_QA_PERMISSIONS` | Comma-separated permissions |
+| `SERVICE_ACCOUNT_PRINTER_TOKEN` | Token for printer system |
+| `SERVICE_ACCOUNT_PRINTER_PERMISSIONS` | Comma-separated permissions |
+
+Example configuration:
+```bash
+SERVICE_ACCOUNT_AI_QA_TOKEN=sk_service_abc123456789
+SERVICE_ACCOUNT_AI_QA_PERMISSIONS=reorder_create,order_read_all
+
+SERVICE_ACCOUNT_PRINTER_TOKEN=sk_service_def987654321
+SERVICE_ACCOUNT_PRINTER_PERMISSIONS=order_claim,order_complete
+```
+
+### Airplane Mode Authentication
+
+In airplane mode, service account tokens are still validated but can be configured locally:
+
+```bash
+# .env.local (gitignored)
+SERVICE_ACCOUNT_AI_QA_TOKEN=dev_token_ai_qa
+SERVICE_ACCOUNT_AI_QA_PERMISSIONS=reorder_create,order_read_all
+```
+
+Or bypass authentication entirely for local development:
+
+```bash
+SKIP_SERVICE_AUTH=true just dev
+```
+
+When `SKIP_SERVICE_AUTH=true`:
+- All service endpoints accept any Bearer token
+- Service account defaults to `dev-service` with all permissions
+- **Never enable in production**
 
 ## Implementation
 
@@ -515,6 +775,11 @@ async fn printer_loop(api_base: &str, worker_id: &str) {
 | `DYNAMODB_ORDERS_TABLE` | No | - | DynamoDB table for orders (enables AWS mode) |
 | `ORDER_TTL_DAYS` | No | 30 | Days to retain completed orders |
 | `QUEUE_BASE_PATH` | No | `./queue` | Local queue directory (airplane mode) |
+| `SERVICE_ACCOUNT_AI_QA_TOKEN` | No | - | Auth token for AI QA service account |
+| `SERVICE_ACCOUNT_AI_QA_PERMISSIONS` | No | - | Permissions for AI QA service |
+| `SERVICE_ACCOUNT_PRINTER_TOKEN` | No | - | Auth token for printer service account |
+| `SERVICE_ACCOUNT_PRINTER_PERMISSIONS` | No | - | Permissions for printer service |
+| `SKIP_SERVICE_AUTH` | No | false | Bypass service auth (dev only, never in prod) |
 
 ## Airplane Mode
 
@@ -649,10 +914,13 @@ resource "aws_dynamodb_table" "orders" {
 
 ## Security Considerations
 
-1. **Authentication**: The claim/complete/fail endpoints should require printer authentication (API key or mutual TLS)
-2. **Authorization**: Users should only see/cancel their own orders (requires user identity)
-3. **Rate limiting**: Protect claim endpoint from aggressive polling
-4. **Validation**: Validate worker_id matches on complete/fail to prevent hijacking
+1. **Service Authentication**: The claim/complete/fail/reorder endpoints require service account tokens (Bearer auth)
+2. **Permission Model**: Each service account has specific permissions (ReorderCreate, OrderClaim, etc.)
+3. **Authorization**: Users should only see/cancel their own orders (requires user identity)
+4. **Rate limiting**: Protect claim endpoint from aggressive polling
+5. **Validation**: Validate service account ID matches on complete/fail to prevent hijacking
+6. **Audit Trail**: All re-orders record who initiated them and why
+7. **Token Security**: Service tokens should be rotated regularly and stored in secrets manager (not env vars) for production
 
 ## Future Enhancements
 
@@ -670,6 +938,9 @@ This architecture provides:
 - **Reliable ordering**: DynamoDB GSI ensures consistent queue order
 - **Atomic claims**: Conditional updates prevent double-processing
 - **Flexible reordering**: Fractional positioning enables efficient priority changes
+- **Courtesy re-orders**: AI systems can re-order failed prints at no customer cost
+- **Service authentication**: Secure token-based auth for machine-to-machine operations
+- **Audit trail**: Full tracking of who initiated re-orders and why
 - **Airplane mode**: Full local development without AWS
 - **Familiar patterns**: Follows existing `ModelCache` trait pattern
 - **Clean separation**: Queue abstraction allows easy testing and backend swapping
