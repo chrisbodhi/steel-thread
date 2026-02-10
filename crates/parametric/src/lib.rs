@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
-use std::process::ExitStatus;
 
 use domain::ActuatorPlate;
+use kittycad::types::{ApiCallStatus, FileExportFormat, FileImportFormat};
 use tempfile::TempDir;
 
 pub trait Validation {
@@ -101,10 +101,16 @@ fn copy_kcl_sources(temp_dir: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErrors> {
+/// Create a kittycad client from environment variables.
+/// Requires KITTYCAD_API_TOKEN or ZOO_API_TOKEN to be set.
+fn create_zoo_client() -> kittycad::Client {
+    kittycad::Client::new_from_env()
+}
+
+pub async fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErrors> {
     if let Err(e) = validation::validate(plate) {
         let msg = format!("Validation failed: {}", e);
-        eprintln!("{}", msg);
+        tracing::error!("{}", msg);
         return Err(AllErrors::ValidationError(msg));
     }
 
@@ -113,7 +119,7 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
         Ok(dir) => dir,
         Err(e) => {
             let msg = format!("Failed to create temp directory: {}", e);
-            eprintln!("{}", msg);
+            tracing::error!("{}", msg);
             return Err(AllErrors::GeneratorError(msg));
         }
     };
@@ -127,28 +133,31 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
             get_kcl_source_dir(),
             e
         );
-        eprintln!("{}", msg);
+        tracing::error!("{}", msg);
         return Err(AllErrors::GeneratorError(msg));
     }
 
     // Write params.kcl to temp dir
     if let Err(e) = write_params_file(plate, temp_path) {
         let msg = format!("Failed to write params file: {}", e);
-        eprintln!("{}", msg);
+        tracing::error!("{}", msg);
         return Err(AllErrors::GeneratorError(msg));
     }
 
-    // Generate STEP file
+    // Generate STEP file using zoo CLI
+    // Note: KCL execution requires the Zoo modeling WebSocket API, which is not
+    // exposed as a REST endpoint in the kittycad crate. The zoo CLI handles the
+    // WebSocket session internally via kcl-lib.
     if let Err(e) = generate_step_in_dir(plate, temp_path) {
         let msg = format!("Failed to generate STEP file: {:?}", e);
-        eprintln!("{}", msg);
+        tracing::error!("{}", msg);
         return Err(AllErrors::GeneratorError(msg));
     }
 
-    // Generate glTF file
-    if let Err(e) = generate_gltf_in_dir(plate, temp_path) {
+    // Generate glTF file using the kittycad API (STEP → glTF conversion)
+    if let Err(e) = generate_gltf_via_api(temp_path).await {
         let msg = format!("Failed to generate glTF file: {:?}", e);
-        eprintln!("{}", msg);
+        tracing::error!("{}", msg);
         return Err(AllErrors::GeneratorError(msg));
     }
 
@@ -162,10 +171,14 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
     })
 }
 
-/// Generate STEP file in the specified directory
-fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
+/// Generate STEP file in the specified directory using the zoo CLI.
+///
+/// KCL execution requires the Zoo modeling WebSocket API, which is handled
+/// by the zoo CLI internally. The kittycad REST crate does not expose a
+/// KCL execution endpoint.
+fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<(), ValidationError> {
     if let Err(e) = validation::validate(plate) {
-        eprintln!("oops: {}", e);
+        tracing::error!("Validation failed: {}", e);
         return Err(ValidationError::NoStep);
     }
 
@@ -182,48 +195,166 @@ fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus,
         .status();
 
     match status {
-        Ok(stat) => Ok(stat),
+        Ok(stat) if stat.success() => Ok(()),
+        Ok(stat) => {
+            tracing::error!("zoo kcl export exited with status: {}", stat);
+            Err(ValidationError::NoStep)
+        }
         Err(e) => {
-            eprintln!("ouch: {}", e);
+            tracing::error!("Failed to run zoo CLI: {}", e);
             Err(ValidationError::NoStep)
         }
     }
 }
 
-/// Generate glTF file in the specified directory by converting the STEP file
-fn generate_gltf_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
-    if let Err(e) = validation::validate(plate) {
-        eprintln!("oops: {}", e);
-        return Err(ValidationError::NoStep);
-    }
-
+/// Generate glTF file by converting the STEP file using the Zoo API via the kittycad crate.
+///
+/// This replaces the previous approach of shelling out to `zoo file convert`.
+/// Uses the kittycad crate's file conversion endpoint (POST /file/conversion/{src_format}/{output_format})
+/// for a cleaner, more reliable conversion with proper error handling.
+async fn generate_gltf_via_api(dir: &Path) -> Result<(), AllErrors> {
     let step_file = dir.join("output.step");
 
-    // Check if STEP file exists
     if !step_file.exists() {
-        eprintln!("STEP file does not exist at {:?}", step_file);
-        return Err(ValidationError::NoStep);
+        return Err(AllErrors::GeneratorError(
+            "STEP file does not exist for glTF conversion".to_string(),
+        ));
     }
 
-    // Convert STEP file to glTF using zoo file convert
-    let status = std::process::Command::new("zoo")
-        .args([
-            "file",
-            "convert",
-            "--src-format=step",
-            "--output-format=gltf",
-            step_file.to_str().unwrap(),
-            dir.to_str().unwrap(),
-        ])
-        .status();
+    // Read the STEP file contents
+    let step_bytes = tokio::fs::read(&step_file).await.map_err(|e| {
+        AllErrors::GeneratorError(format!("Failed to read STEP file: {}", e))
+    })?;
 
-    match status {
-        Ok(stat) => Ok(stat),
-        Err(e) => {
-            eprintln!("ouch: {}", e);
-            Err(ValidationError::NoStep)
+    let client = create_zoo_client();
+
+    // Convert STEP to glTF using the kittycad file conversion API
+    let conversion = client
+        .file()
+        .create_conversion(
+            FileExportFormat::Gltf,
+            FileImportFormat::Step,
+            &bytes::Bytes::from(step_bytes),
+        )
+        .await
+        .map_err(|e| {
+            AllErrors::GeneratorError(format!("Zoo API file conversion failed: {}", e))
+        })?;
+
+    // Handle async conversion - poll until complete if needed
+    let outputs = match conversion.status {
+        ApiCallStatus::Completed => conversion.outputs,
+        ApiCallStatus::Failed => {
+            let error_msg = conversion
+                .error
+                .unwrap_or_else(|| "Unknown conversion error".to_string());
+            return Err(AllErrors::GeneratorError(format!(
+                "Zoo API conversion failed: {}",
+                error_msg
+            )));
+        }
+        // For async operations, poll until completion
+        status => {
+            tracing::info!(
+                "Conversion is {:?}, polling for completion (id: {})",
+                status,
+                conversion.id
+            );
+            poll_conversion_completion(&client, conversion.id).await?
+        }
+    };
+
+    // Extract and write the glTF output file
+    let outputs = outputs.ok_or_else(|| {
+        AllErrors::GeneratorError("No output files returned from conversion".to_string())
+    })?;
+
+    // Find the glTF file in the outputs
+    let gltf_data = outputs
+        .iter()
+        .find(|(path, _)| path.ends_with(".gltf") || path.ends_with(".glb"))
+        .map(|(_, data)| data)
+        .ok_or_else(|| {
+            let available_keys: Vec<&String> = outputs.keys().collect();
+            AllErrors::GeneratorError(format!(
+                "No glTF file found in conversion outputs. Available: {:?}",
+                available_keys
+            ))
+        })?;
+
+    // Write glTF file to the output directory
+    let gltf_path = dir.join("source.gltf");
+    tokio::fs::write(&gltf_path, &gltf_data.0).await.map_err(|e| {
+        AllErrors::GeneratorError(format!("Failed to write glTF file: {}", e))
+    })?;
+
+    tracing::info!("Generated glTF via Zoo API at {:?}", gltf_path);
+    Ok(())
+}
+
+/// Poll the Zoo API for completion of an async file conversion operation.
+async fn poll_conversion_completion(
+    client: &kittycad::Client,
+    operation_id: uuid::Uuid,
+) -> Result<Option<std::collections::HashMap<String, kittycad::types::base64::Base64Data>>, AllErrors>
+{
+    let max_attempts = 60; // Poll for up to 5 minutes (60 * 5s)
+    let poll_interval = std::time::Duration::from_secs(5);
+
+    for attempt in 1..=max_attempts {
+        tokio::time::sleep(poll_interval).await;
+
+        let result = client
+            .api_calls()
+            .get_async_operation(operation_id)
+            .await
+            .map_err(|e| {
+                AllErrors::GeneratorError(format!("Failed to poll conversion status: {}", e))
+            })?;
+
+        match result {
+            kittycad::types::AsyncApiCallOutput::FileConversion {
+                status,
+                outputs,
+                error,
+                ..
+            } => match status {
+                ApiCallStatus::Completed => {
+                    tracing::info!(
+                        "Conversion completed after {} poll attempts",
+                        attempt
+                    );
+                    return Ok(outputs);
+                }
+                ApiCallStatus::Failed => {
+                    let error_msg =
+                        error.unwrap_or_else(|| "Unknown conversion error".to_string());
+                    return Err(AllErrors::GeneratorError(format!(
+                        "Zoo API conversion failed: {}",
+                        error_msg
+                    )));
+                }
+                _ => {
+                    tracing::debug!(
+                        "Conversion still in progress (attempt {}/{})",
+                        attempt,
+                        max_attempts
+                    );
+                }
+            },
+            other => {
+                return Err(AllErrors::GeneratorError(format!(
+                    "Unexpected async operation type: {:?}",
+                    std::mem::discriminant(&other)
+                )));
+            }
         }
     }
+
+    Err(AllErrors::GeneratorError(format!(
+        "Conversion timed out after {} attempts",
+        max_attempts
+    )))
 }
 
 #[cfg(test)]
@@ -244,14 +375,15 @@ mod tests {
         assert_eq!(result.unwrap_err(), ValidationError::NoStep);
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn test_generate_model_succeeds_with_valid_plate() {
+    async fn test_generate_model_succeeds_with_valid_plate() {
         let plate = ActuatorPlate::default();
 
-        // This test requires zoo CLI to be installed and authenticated
-        // It will generate params.kcl, STEP, and glTF files in a temp directory
-        let result = generate_model(&plate);
+        // This test requires:
+        // 1. zoo CLI to be installed and authenticated
+        // 2. KITTYCAD_API_TOKEN or ZOO_API_TOKEN environment variable set
+        let result = generate_model(&plate).await;
 
         // Should succeed in generating all files
         assert!(result.is_ok());
@@ -268,7 +400,8 @@ mod tests {
         let mut plate = ActuatorPlate::default();
         plate.bolt_spacing = Millimeters(0);
 
-        let result = generate_model(&plate);
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let result = rt.block_on(generate_model(&plate));
 
         assert!(result.is_err());
         match result.unwrap_err() {
@@ -310,21 +443,22 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_gltf_fails_with_invalid_plate() {
-        let mut plate = ActuatorPlate::default();
-        plate.plate_thickness = Millimeters(0); // Invalid plate thickness
-
+    fn test_generate_step_fails_with_missing_kcl_files() {
+        let plate = ActuatorPlate::default();
         let temp_dir = TempDir::new().unwrap();
-        let result = generate_gltf_in_dir(&plate, temp_dir.path());
 
+        // Don't copy KCL source files - this should cause zoo to fail
+        write_params_file(&plate, temp_dir.path()).unwrap();
+
+        let result = generate_step_in_dir(&plate, temp_dir.path());
+        // Should fail because main.kcl doesn't exist in the temp dir
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ValidationError::NoStep);
     }
 
     // This test requires the `zoo` CLI to be installed and for the user to be authenticated; it is ignored by default
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn test_generate_step_creates_file_with_zoo_cli() {
+    async fn test_generate_step_creates_file_with_zoo_cli() {
         let plate = ActuatorPlate::default();
         let temp_dir = TempDir::new().unwrap();
 
@@ -338,13 +472,10 @@ mod tests {
         let result = generate_step_in_dir(&plate, temp_dir.path());
 
         match result {
-            Ok(status) => {
-                // Check if command succeeded
-                assert!(status.success(), "zoo command should succeed");
+            Ok(()) => {
                 assert!(temp_dir.path().join("output.step").exists());
             }
             Err(e) => {
-                // If zoo is not installed, the test should be skipped
                 panic!("Failed to run zoo command: {:?}. Is zoo CLI installed? Is the user authenticated?", e);
             }
         }
@@ -352,10 +483,10 @@ mod tests {
         // Temp directory is automatically cleaned up
     }
 
-    // This test requires the `zoo` CLI to be installed and for the user to be authenticated; it is ignored by default
-    #[test]
+    // This test requires the `zoo` CLI, KITTYCAD_API_TOKEN, and user authentication
+    #[tokio::test]
     #[ignore]
-    fn test_generate_gltf_creates_file_with_zoo_cli() {
+    async fn test_generate_gltf_via_api() {
         let plate = ActuatorPlate::default();
         let temp_dir = TempDir::new().unwrap();
 
@@ -363,25 +494,19 @@ mod tests {
         copy_kcl_sources(temp_dir.path()).unwrap();
         write_params_file(&plate, temp_dir.path()).unwrap();
 
-        // Generate STEP file first (glTF generation now converts from STEP)
+        // Generate STEP file first
         let step_result = generate_step_in_dir(&plate, temp_dir.path());
         assert!(step_result.is_ok(), "STEP generation should succeed");
-        assert!(
-            step_result.unwrap().success(),
-            "STEP generation should succeed"
-        );
 
-        let result = generate_gltf_in_dir(&plate, temp_dir.path());
+        // Convert STEP to glTF via the Zoo API
+        let result = generate_gltf_via_api(temp_dir.path()).await;
 
         match result {
-            Ok(status) => {
-                // Check if command succeeded
-                assert!(status.success(), "zoo command should succeed");
+            Ok(()) => {
                 assert!(temp_dir.path().join("source.gltf").exists());
             }
             Err(e) => {
-                // If zoo is not installed, the test should be skipped
-                panic!("Failed to run zoo command: {:?}. Is zoo CLI installed? Is the user authenticated?", e);
+                panic!("Failed to convert via Zoo API: {:?}. Is KITTYCAD_API_TOKEN set?", e);
             }
         }
 

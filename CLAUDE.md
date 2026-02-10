@@ -17,6 +17,7 @@ In production, the Rust server serves both the API and the static frontend files
 - **Tokio**: 1.42 (async runtime)
 - **Serde**: 1.0 (serialization)
 - **tower-http**: Static file serving
+- **kittycad**: 0.4 (Zoo API client for STEP→glTF file conversion)
 
 ### Frontend (Bun/React)
 - **Bun**: Runtime and bundler
@@ -29,6 +30,8 @@ In production, the Rust server serves both the API and the static frontend files
 
 - **Rust**: Latest stable
 - **Bun**: 1.0+ (for frontend development)
+- **Zoo CLI**: For KCL execution and STEP generation (`zoo kcl export`)
+- **Zoo API Token**: Set `KITTYCAD_API_TOKEN` or `ZOO_API_TOKEN` env var (for STEP→glTF conversion via API)
 - **wasm-pack**: 0.14.0+ (for building WASM modules)
   ```bash
   cargo install wasm-pack
@@ -203,14 +206,14 @@ Update the cache version prefix in **ALL** of these locations:
 **1. In `.github/workflows/ci.yml`** (PR checks):
 ```yaml
 # Change this:
-key: ${{ runner.os }}-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
-restore-keys: |
-  ${{ runner.os }}-cargo-v2-
-
-# To this (increment the version number):
 key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
 restore-keys: |
   ${{ runner.os }}-cargo-v3-
+
+# To this (increment the version number):
+key: ${{ runner.os }}-cargo-v4-${{ hashFiles('**/Cargo.lock') }}
+restore-keys: |
+  ${{ runner.os }}-cargo-v4-
 ```
 
 Update in:
@@ -224,7 +227,7 @@ Update in:
 
 #### When to Bump
 
-Bump the cache version (v2 → v3 → v4, etc.) when:
+Bump the cache version (v3 → v4 → v5, etc.) when:
 - Adding new crate dependencies to any `Cargo.toml`
 - Upgrading major versions of existing dependencies
 - CI build fails but local build succeeds
@@ -321,7 +324,7 @@ All validators return `Result<(), PlateValidationError>`.
 **Current test count: 35 fast tests + 3 ignored integration tests**
 - 20 validation unit tests
 - 4 parametric unit tests
-- 3 parametric integration tests (ignored - require zoo CLI)
+- 3 parametric integration tests (ignored - require zoo CLI + Zoo API token)
 - 5 web crate unit tests
 - 6 REST API integration tests
 
