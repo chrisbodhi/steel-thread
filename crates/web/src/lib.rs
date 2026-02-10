@@ -253,8 +253,8 @@ async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse
 /// Generate actuator plate model files
 ///
 /// Generates STEP and glTF model files based on the provided actuator plate configuration.
-/// STEP files are generated from KCL parametric models via the Zoo CLI, then converted to
-/// glTF format using the Zoo API (kittycad crate) for 3D preview.
+/// STEP files are generated from KCL parametric models via kcl-lib (Zoo WebSocket API),
+/// then converted to glTF format using the kittycad crate's file conversion API for 3D preview.
 /// Returns download URLs for the generated files along with a session ID for retrieval.
 /// Results are cached for faster subsequent requests with the same configuration.
 /// Requires KITTYCAD_API_TOKEN or ZOO_API_TOKEN environment variable to be set.

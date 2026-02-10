@@ -15,7 +15,7 @@ crates/
         └── api_tests.rs        # Integration tests for REST API (6 tests)
 ```
 
-**Total: 35 fast tests + 3 ignored integration tests**
+**Total: 34 fast tests + 3 ignored integration tests**
 
 ## Running Tests
 
@@ -93,21 +93,19 @@ cargo test -p web
 
 ### 2. Parametric Tests (`crates/parametric/src/lib.rs`)
 
-**Unit Tests** (4 tests):
-- `test_generate_step_fails_with_invalid_plate` - Invalid plates fail validation
-- `test_generate_model_succeeds_with_valid_plate` - Valid plates generate params file
-- `test_generate_model_fails_with_invalid_plate` - Invalid plates return proper error
-- `test_generate_params_file_creates_valid_kcl` - Generated KCL file has correct format and values
+**Unit Tests** (3 tests):
+- `test_generate_model_fails_with_invalid_plate` - Invalid plates return proper validation error
+- `test_write_params_file_creates_valid_kcl` - Generated params.kcl has correct format and values
+- `test_generate_params_file_creates_valid_kcl` - Generated KCL file has correct export values
 
 **Integration Tests** (3 ignored tests):
-- `test_generate_model_succeeds_with_valid_plate` - Full end-to-end model generation (requires zoo CLI + Zoo API token)
-- `test_generate_step_creates_file_with_zoo_cli` - STEP generation via zoo CLI (requires zoo CLI)
-- `test_generate_gltf_via_api` - STEP→glTF conversion via Zoo API (requires zoo CLI + Zoo API token)
+- `test_generate_model_succeeds_with_valid_plate` - Full end-to-end: KCL→STEP via kcl-lib, STEP→glTF via kittycad API
+- `test_generate_step_via_kcl_lib` - STEP generation via kcl-lib (Zoo WebSocket API)
+- `test_generate_gltf_via_api` - STEP→glTF conversion via kittycad file conversion API
 
 The integration tests are ignored by default because they require:
-1. The `zoo` CLI tool installed and authenticated
-2. `KITTYCAD_API_TOKEN` or `ZOO_API_TOKEN` environment variable set
-3. KCL source files to exist
+1. `KITTYCAD_API_TOKEN` or `ZOO_API_TOKEN` environment variable set
+2. Network access to the Zoo API (WebSocket for KCL execution, REST for file conversion)
 
 Run with: `cargo test -p parametric -- --include-ignored`
 
