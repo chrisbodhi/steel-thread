@@ -16,7 +16,7 @@ use axum::{
     Router,
 };
 use domain::ActuatorPlate;
-use parametric::{generate_model, GenerationResult};
+use parametric::GenerationResult;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -106,7 +106,7 @@ This API automates the tedious CAD work of creating these custom brackets.
 - Multiple material options (aluminum, stainless steel, carbon steel, brass)
 - Automatic caching for faster repeated requests
 - Production-ready STEP files for manufacturing
-- glTF preview files for 3D visualization
+- glTF preview files for 3D visualization (converted via Zoo API using the kittycad crate)
         "#,
         contact(
             name = "Platerator Team"
@@ -253,8 +253,11 @@ async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse
 /// Generate actuator plate model files
 ///
 /// Generates STEP and glTF model files based on the provided actuator plate configuration.
+/// STEP files are generated from KCL parametric models via kcl-lib (Zoo WebSocket API),
+/// then converted to glTF format using the kittycad crate's file conversion API for 3D preview.
 /// Returns download URLs for the generated files along with a session ID for retrieval.
 /// Results are cached for faster subsequent requests with the same configuration.
+/// Requires KITTYCAD_API_TOKEN or ZOO_API_TOKEN environment variable to be set.
 #[utoipa::path(
     post,
     path = "/api/generate",
@@ -301,7 +304,7 @@ pub async fn generate_plate_model(
 
     tracing::info!("Cache miss for key: {}, generating model", cache_key);
 
-    match generate_model(&payload) {
+    match parametric::generate_model(&payload).await {
         Ok(result) => {
             let session_id = Uuid::new_v4().to_string();
             let download_url = format!("/api/download/step/{}", session_id);

@@ -4,6 +4,13 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
+bytes = "1"
 domain = { path = "../domain" }
+kcl-lib = "0.2.124"
+kittycad-modeling-cmds = "=0.2.164"
+kittycad = "0.4"
 tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1.42", features = ["full"] }
+tracing = "0.1"
 validation = { path = "../validation" }
