@@ -8,6 +8,12 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "openapi", schema(example = 60))]
 pub struct Millimeters(pub u16);
 
+/// A type-safe wrapper for force in Newtons.
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "openapi", schema(example = 500))]
+pub struct Newtons(pub u32);
+
 /// Standard ISO metric bolt sizes with clearance hole diameters.
 ///
 /// Each variant represents a standard metric bolt size (e.g., M3 = 3mm nominal diameter).
@@ -100,6 +106,56 @@ impl Material {
             Material::Brass => "#B5A642",
         }
     }
+
+    /// Yield strength in MPa (0.2% offset).
+    pub const fn yield_strength_mpa(&self) -> u16 {
+        match self {
+            Material::Aluminum => 276,      // 6061-T6
+            Material::StainlessSteel => 215, // 304
+            Material::CarbonSteel => 250,    // A36
+            Material::Brass => 124,          // C36000
+        }
+    }
+
+    /// Ultimate tensile strength in MPa.
+    pub const fn tensile_strength_mpa(&self) -> u16 {
+        match self {
+            Material::Aluminum => 310,
+            Material::StainlessSteel => 505,
+            Material::CarbonSteel => 400,
+            Material::Brass => 338,
+        }
+    }
+
+    /// Shear strength in MPa.
+    pub const fn shear_strength_mpa(&self) -> u16 {
+        match self {
+            Material::Aluminum => 207,
+            Material::StainlessSteel => 310,
+            Material::CarbonSteel => 230,
+            Material::Brass => 200,
+        }
+    }
+
+    /// Elastic modulus in MPa (e.g., 68_900 for aluminum = 68.9 GPa).
+    pub const fn elastic_modulus_mpa(&self) -> u32 {
+        match self {
+            Material::Aluminum => 68_900,
+            Material::StainlessSteel => 193_000,
+            Material::CarbonSteel => 200_000,
+            Material::Brass => 97_000,
+        }
+    }
+
+    /// Density in kg/m³.
+    pub const fn density_kg_m3(&self) -> u16 {
+        match self {
+            Material::Aluminum => 2700,
+            Material::StainlessSteel => 8000,
+            Material::CarbonSteel => 7850,
+            Material::Brass => 8500,
+        }
+    }
 }
 
 /// Configuration for an actuator plate assembly.
@@ -155,6 +211,13 @@ pub struct ActuatorPlate {
     ///
     /// Determines the structural rigidity and extrusion depth of the plate.
     pub plate_thickness: Millimeters,
+
+    /// Expected operating force per actuator pin (in Newtons).
+    ///
+    /// The nominal force each pin is expected to handle during normal operation.
+    /// Stress checks apply a 2× safety factor internally.
+    #[cfg_attr(feature = "openapi", schema(example = 500))]
+    pub expected_force_per_pin: Newtons,
 }
 
 impl ActuatorPlate {
@@ -168,6 +231,7 @@ impl ActuatorPlate {
         pin_diameter: Millimeters,
         pin_count: u16,
         plate_thickness: Millimeters,
+        expected_force_per_pin: Newtons,
     ) -> Self {
         ActuatorPlate {
             bolt_spacing,
@@ -178,6 +242,7 @@ impl ActuatorPlate {
             pin_diameter,
             pin_count,
             plate_thickness,
+            expected_force_per_pin,
         }
     }
 
@@ -196,6 +261,7 @@ impl ActuatorPlate {
         hasher.update(self.pin_diameter.0.to_le_bytes());
         hasher.update(self.pin_count.to_le_bytes());
         hasher.update(self.plate_thickness.0.to_le_bytes());
+        hasher.update(self.expected_force_per_pin.0.to_le_bytes());
 
         let result = hasher.finalize();
         format!("plate-{}", hex::encode(&result[..8]))
@@ -213,6 +279,7 @@ impl Default for ActuatorPlate {
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
+            expected_force_per_pin: Newtons(500),
         }
     }
 }
@@ -268,5 +335,84 @@ mod tests {
         assert_eq!(Material::StainlessSteel.as_hex_code(), "#C0C4CE");
         assert_eq!(Material::CarbonSteel.as_hex_code(), "#605E5C");
         assert_eq!(Material::Brass.as_hex_code(), "#B5A642");
+    }
+
+    #[test]
+    fn test_material_yield_strength() {
+        assert_eq!(Material::Aluminum.yield_strength_mpa(), 276);
+        assert_eq!(Material::StainlessSteel.yield_strength_mpa(), 215);
+        assert_eq!(Material::CarbonSteel.yield_strength_mpa(), 250);
+        assert_eq!(Material::Brass.yield_strength_mpa(), 124);
+    }
+
+    #[test]
+    fn test_material_tensile_strength() {
+        assert_eq!(Material::Aluminum.tensile_strength_mpa(), 310);
+        assert_eq!(Material::StainlessSteel.tensile_strength_mpa(), 505);
+        assert_eq!(Material::CarbonSteel.tensile_strength_mpa(), 400);
+        assert_eq!(Material::Brass.tensile_strength_mpa(), 338);
+    }
+
+    #[test]
+    fn test_material_shear_strength() {
+        assert_eq!(Material::Aluminum.shear_strength_mpa(), 207);
+        assert_eq!(Material::StainlessSteel.shear_strength_mpa(), 310);
+        assert_eq!(Material::CarbonSteel.shear_strength_mpa(), 230);
+        assert_eq!(Material::Brass.shear_strength_mpa(), 200);
+    }
+
+    #[test]
+    fn test_material_elastic_modulus() {
+        assert_eq!(Material::Aluminum.elastic_modulus_mpa(), 68_900);
+        assert_eq!(Material::StainlessSteel.elastic_modulus_mpa(), 193_000);
+        assert_eq!(Material::CarbonSteel.elastic_modulus_mpa(), 200_000);
+        assert_eq!(Material::Brass.elastic_modulus_mpa(), 97_000);
+    }
+
+    #[test]
+    fn test_material_density() {
+        assert_eq!(Material::Aluminum.density_kg_m3(), 2700);
+        assert_eq!(Material::StainlessSteel.density_kg_m3(), 8000);
+        assert_eq!(Material::CarbonSteel.density_kg_m3(), 7850);
+        assert_eq!(Material::Brass.density_kg_m3(), 8500);
+    }
+
+    #[test]
+    fn test_brass_has_lowest_yield_strength() {
+        let materials = [
+            Material::Aluminum,
+            Material::StainlessSteel,
+            Material::CarbonSteel,
+            Material::Brass,
+        ];
+        let min = materials
+            .iter()
+            .min_by_key(|m| m.yield_strength_mpa())
+            .unwrap();
+        assert_eq!(*min, Material::Brass);
+    }
+
+    #[test]
+    fn test_aluminum_has_lowest_density() {
+        let materials = [
+            Material::Aluminum,
+            Material::StainlessSteel,
+            Material::CarbonSteel,
+            Material::Brass,
+        ];
+        let min = materials
+            .iter()
+            .min_by_key(|m| m.density_kg_m3())
+            .unwrap();
+        assert_eq!(*min, Material::Aluminum);
+    }
+
+    #[test]
+    fn test_cache_key_differs_for_different_forces() {
+        let plate1 = ActuatorPlate::default();
+        let mut plate2 = ActuatorPlate::default();
+        plate2.expected_force_per_pin = Newtons(1000);
+
+        assert_ne!(plate1.cache_key(), plate2.cache_key());
     }
 }

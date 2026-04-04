@@ -1,5 +1,22 @@
 # Validation Crate Enhancement Plan
 
+## Status
+
+- [x] **Phase 1**: Domain Type Changes — `Newtons` type, material properties, `expected_force_per_pin` field
+- [ ] **Phase 2**: Validation Logic — stress check functions
+- [ ] **Phase 3**: WASM Bindings
+- [ ] **Phase 4**: Web API Updates
+- [ ] **Phase 5**: Frontend Updates
+- [ ] **Phase 6**: Testing Strategy
+
+### Phase 1 Notes
+- Implemented with Option A (4-bolt assumption, no new bolt_count field)
+- `expected_force_per_pin` added as a required field (not `Option`), breaking change accepted
+- All 49 existing tests updated and passing
+- 8 new domain tests added (material properties, density/yield ordering, force cache key)
+
+---
+
 ## Objective
 
 Enhance the validation crate to perform **engineering stress analysis** that accounts for

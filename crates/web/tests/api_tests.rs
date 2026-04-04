@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use domain::{ActuatorPlate, BoltSize, Material, Millimeters};
+use domain::{ActuatorPlate, BoltSize, Material, Millimeters, Newtons};
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -48,6 +48,7 @@ async fn test_generate_endpoint_invalid_plate() {
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -86,6 +87,7 @@ async fn test_generate_endpoint_valid_plate() {
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -140,6 +142,7 @@ async fn test_validate_endpoint_valid_plate() {
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -175,6 +178,7 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -214,6 +218,7 @@ async fn test_validate_endpoint_invalid_pin_count() {
         pin_diameter: Millimeters(10),
         pin_count: 13, // Invalid! Max is 12
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app

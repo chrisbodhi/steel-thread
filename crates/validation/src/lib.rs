@@ -144,7 +144,7 @@ mod tests {
     use alloc::string::ToString;
 
     use super::*;
-    use domain::{BoltSize, Material, Millimeters};
+    use domain::{BoltSize, Material, Millimeters, Newtons};
 
     #[test]
     fn test_validate_bolt_spacing_valid() {
@@ -292,6 +292,7 @@ mod tests {
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
+            expected_force_per_pin: Newtons(500),
         };
         assert!(validate(&plate).is_ok());
     }
@@ -307,6 +308,7 @@ mod tests {
             pin_diameter: Millimeters(10),
             pin_count: 6,
             plate_thickness: Millimeters(8),
+            expected_force_per_pin: Newtons(500),
         };
         let result = validate(&plate);
         assert!(result.is_err());
