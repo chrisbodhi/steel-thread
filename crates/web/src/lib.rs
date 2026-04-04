@@ -42,6 +42,7 @@ use uuid::Uuid;
         schemas(
             ActuatorPlate,
             domain::Millimeters,
+            domain::Newtons,
             domain::BoltSize,
             OkResponse,
             ValidationSuccessResponse,

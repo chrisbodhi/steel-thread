@@ -78,17 +78,7 @@ async fn test_generate_endpoint_invalid_plate() {
 async fn test_generate_endpoint_valid_plate() {
     let app = create_test_router();
 
-    let plate = ActuatorPlate {
-        bolt_spacing: Millimeters(60),
-        bolt_size: BoltSize::M10,
-        bracket_height: Millimeters(40),
-        bracket_width: Millimeters(30),
-        material: Material::Aluminum,
-        pin_diameter: Millimeters(10),
-        pin_count: 6,
-        plate_thickness: Millimeters(8),
-        expected_force_per_pin: Newtons(500),
-    };
+    let plate = ActuatorPlate::default();
 
     let response = app
         .oneshot(
@@ -133,17 +123,7 @@ async fn test_generate_endpoint_valid_plate() {
 async fn test_validate_endpoint_valid_plate() {
     let app = create_test_router();
 
-    let plate = ActuatorPlate {
-        bolt_spacing: Millimeters(60),
-        bolt_size: BoltSize::M10,
-        bracket_height: Millimeters(40),
-        bracket_width: Millimeters(30),
-        material: Material::Aluminum,
-        pin_diameter: Millimeters(10),
-        pin_count: 6,
-        plate_thickness: Millimeters(8),
-        expected_force_per_pin: Newtons(500),
-    };
+    let plate = ActuatorPlate::default();
 
     let response = app
         .oneshot(

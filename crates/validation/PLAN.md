@@ -3,7 +3,7 @@
 ## Status
 
 - [x] **Phase 1**: Domain Type Changes — `Newtons` type, material properties, `expected_force_per_pin` field
-- [ ] **Phase 2**: Validation Logic — stress check functions
+- [x] **Phase 2**: Validation Logic — stress check functions
 - [ ] **Phase 3**: WASM Bindings
 - [ ] **Phase 4**: Web API Updates
 - [ ] **Phase 5**: Frontend Updates
@@ -14,6 +14,16 @@
 - `expected_force_per_pin` added as a required field (not `Option`), breaking change accepted
 - All 49 existing tests updated and passing
 - 8 new domain tests added (material properties, density/yield ordering, force cache key)
+
+### Phase 2 Notes
+- All 5 stress checks implemented with integer-only arithmetic (no floating point)
+- Uses u64 intermediates to prevent overflow
+- `minimum_thickness_mm()` advisory function added for frontend guidance
+- 22 new validation tests covering: pass/fail for each check, boundary conditions,
+  safety factor verification, material-change flip tests, thickness-fix tests
+- Updated web test plates to use `ActuatorPlate::default()` (structurally sound)
+- Added `Newtons` to OpenAPI schema registration
+- Total test count: 71 (up from 49)
 
 ---
 
