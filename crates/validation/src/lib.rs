@@ -244,6 +244,61 @@ pub fn validate_pin_clearance(plate: &ActuatorPlate) -> Result<(), PlateValidati
     Ok(())
 }
 
+/// Stress utilization ratios (0.0–1.0+). Values > 1.0 indicate failure.
+pub struct StressUtilization {
+    pub pin_bearing: f32,
+    pub bolt_bearing: f32,
+    pub bending: f32,
+}
+
+/// Compute stress utilization ratios for a valid plate configuration.
+/// Each ratio is design_load / allowable_load (0.0 = no load, 1.0 = at limit).
+pub fn stress_utilization(plate: &ActuatorPlate) -> StressUtilization {
+    let design_force = (plate.expected_force_per_pin.0 as f32) * (SAFETY_FACTOR as f32);
+    let yield_mpa = plate.material.yield_strength_mpa() as f32;
+    let pin_d = plate.pin_diameter.0 as f32;
+    let thickness = plate.plate_thickness.0 as f32;
+    let bolt_d = plate.bolt_size.nominal_diameter_mm() as f32;
+    let pin_count = plate.pin_count as f32;
+    let bolt_count = ASSUMED_BOLT_COUNT as f32;
+    let span = plate.bolt_spacing.0 as f32;
+    let width = plate.bracket_width.0 as f32;
+
+    let pin_allowable = yield_mpa * pin_d * thickness;
+    let pin_bearing = if pin_allowable > 0.0 {
+        design_force / pin_allowable
+    } else {
+        1.0
+    };
+
+    let total_design = design_force * pin_count;
+    let force_per_bolt = total_design / bolt_count;
+    let bolt_allowable = yield_mpa * bolt_d * thickness;
+    let bolt_bearing = if bolt_allowable > 0.0 {
+        force_per_bolt / bolt_allowable
+    } else {
+        1.0
+    };
+
+    // bending: σ = (3*F*L) / (2*w*t²), utilization = σ / σ_yield
+    let bending_stress = if width * thickness * thickness > 0.0 {
+        (3.0 * total_design * span) / (2.0 * width * thickness * thickness)
+    } else {
+        yield_mpa // assume failure
+    };
+    let bending = if yield_mpa > 0.0 {
+        bending_stress / yield_mpa
+    } else {
+        1.0
+    };
+
+    StressUtilization {
+        pin_bearing,
+        bolt_bearing,
+        bending,
+    }
+}
+
 /// Returns the minimum plate thickness (mm) that satisfies bearing and bending
 /// constraints for the given material, geometry, and force. Useful for UI guidance.
 pub fn minimum_thickness_mm(plate: &ActuatorPlate) -> u16 {
