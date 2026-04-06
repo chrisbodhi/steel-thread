@@ -7,7 +7,7 @@
 - [x] **Phase 3**: WASM Bindings
 - [x] **Phase 4**: Web API Updates
 - [x] **Phase 5**: Frontend Updates
-- [ ] **Phase 6**: Testing Strategy
+- [x] **Phase 6**: Testing Strategy
 
 ### Phase 1 Notes
 - Implemented with Option A (4-bolt assumption, no new bolt_count field)
@@ -53,6 +53,16 @@
 - On stress failure: amber warning banner with error message + minimum recommended thickness
 - `expected_force_per_pin` included in API request body
 - Form validation state extended with `expectedForce` field
+
+### Phase 6 Notes
+- Added `MAX_FORCE_PER_PIN: u32 = 100_000` constant and `ExpectedForceTooLarge` error variant
+- Force upper bound tests: accepted at 100,000 N, rejected at 100,001 N
+- Integer overflow protection test: max u16 dimensions + max force don't overflow u64
+- Default plate passes all checks; extreme force (99,999 N) fails on default plate
+- Test matrix from plan: 4 pin bearing cases (aluminum/brass, various dimensions/forces)
+- Utilization ratio tests: positive for valid plate, below 1.0, increases with force
+- Full plate validation rejects excessive force (100,001 N)
+- Total test count: 84 (14 domain + 55 validation + 5 web cache + 4 parametric + 6 API)
 
 ---
 

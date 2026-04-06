@@ -118,9 +118,15 @@ pub fn validate_plate_thickness(value: u16) -> Result<(), PlateValidationError> 
     Ok(())
 }
 
+/// Maximum allowed force per pin (100 kN). Prevents u64 overflow in stress calculations.
+const MAX_FORCE_PER_PIN: u32 = 100_000;
+
 pub fn validate_expected_force(value: u32) -> Result<(), PlateValidationError> {
     if value == 0 {
         return Err(PlateValidationError::ExpectedForceTooSmall);
+    }
+    if value > MAX_FORCE_PER_PIN {
+        return Err(PlateValidationError::ExpectedForceTooLarge);
     }
     Ok(())
 }
@@ -359,6 +365,7 @@ pub enum PlateValidationError {
 
     // Force/stress errors
     ExpectedForceTooSmall,
+    ExpectedForceTooLarge,
     PinBearingStressExceeded {
         design_force_n: u32,
         allowable_force_n: u32,
@@ -398,6 +405,9 @@ impl core::fmt::Display for PlateValidationError {
             Self::PlateThicknessInvalid => write!(f, "plate thickness must be greater than 0"),
             Self::ExpectedForceTooSmall => {
                 write!(f, "expected force per pin must be greater than 0")
+            }
+            Self::ExpectedForceTooLarge => {
+                write!(f, "expected force per pin must not exceed 100,000 N")
             }
             Self::PinBearingStressExceeded {
                 design_force_n,
@@ -984,5 +994,155 @@ mod tests {
             PlateValidationError::PlateThicknessInvalid.to_string(),
             "plate thickness must be greater than 0"
         );
+        assert_eq!(
+            PlateValidationError::ExpectedForceTooSmall.to_string(),
+            "expected force per pin must be greater than 0"
+        );
+        assert_eq!(
+            PlateValidationError::ExpectedForceTooLarge.to_string(),
+            "expected force per pin must not exceed 100,000 N"
+        );
+        assert_eq!(
+            PlateValidationError::PlateBendingStressExceeded.to_string(),
+            "plate bending stress exceeded: plate too thin for the applied load"
+        );
+    }
+
+    // === Phase 6: Overflow and edge case tests ===
+
+    #[test]
+    fn test_force_upper_bound_rejected() {
+        assert!(matches!(
+            validate_expected_force(100_001).unwrap_err(),
+            PlateValidationError::ExpectedForceTooLarge
+        ));
+    }
+
+    #[test]
+    fn test_force_at_upper_bound_accepted() {
+        assert!(validate_expected_force(100_000).is_ok());
+    }
+
+    #[test]
+    fn test_full_plate_rejects_excessive_force() {
+        let mut plate = valid_plate();
+        plate.expected_force_per_pin = Newtons(100_001);
+        assert!(matches!(
+            validate(&plate).unwrap_err(),
+            PlateValidationError::ExpectedForceTooLarge
+        ));
+    }
+
+    #[test]
+    fn test_no_overflow_at_max_inputs() {
+        // Max force (100kN), max pin count (12), max bolt spacing (u16::MAX)
+        // Bending lhs = 3 * (100_000 * 2 * 12) * 65535 = 3 * 2_400_000 * 65535 = 471_852_000_000
+        // This must not panic (fits in u64)
+        let plate = ActuatorPlate {
+            bolt_spacing: Millimeters(65535),
+            bolt_size: BoltSize::M3,
+            bracket_height: Millimeters(65535),
+            bracket_width: Millimeters(65535),
+            material: Material::Aluminum,
+            pin_diameter: Millimeters(65535),
+            pin_count: 12,
+            plate_thickness: Millimeters(65535),
+            expected_force_per_pin: Newtons(100_000),
+        };
+        // Should not panic — may pass or fail on stress, but must not overflow
+        let _ = validate(&plate);
+        let _ = minimum_thickness_mm(&plate);
+        let _ = stress_utilization(&plate);
+    }
+
+    #[test]
+    fn test_default_plate_passes_all_checks() {
+        let plate = ActuatorPlate::default();
+        assert!(validate(&plate).is_ok());
+    }
+
+    #[test]
+    fn test_extreme_force_fails_default_plate() {
+        let mut plate = ActuatorPlate::default();
+        plate.expected_force_per_pin = Newtons(100_000);
+        assert!(validate(&plate).is_err());
+    }
+
+    // Test matrix from plan section 6.2
+    #[test]
+    fn test_pin_bearing_matrix_aluminum_10_8_500() {
+        let mut plate = valid_plate();
+        plate.material = Material::Aluminum;
+        plate.pin_diameter = Millimeters(10);
+        plate.plate_thickness = Millimeters(8);
+        plate.expected_force_per_pin = Newtons(500);
+        // allowable = 276 * 10 * 8 = 22,080, design = 1000 → PASS
+        assert!(validate_pin_bearing_stress(&plate).is_ok());
+    }
+
+    #[test]
+    fn test_pin_bearing_matrix_brass_5_3_300() {
+        let mut plate = valid_plate();
+        plate.material = Material::Brass;
+        plate.pin_diameter = Millimeters(5);
+        plate.plate_thickness = Millimeters(3);
+        plate.expected_force_per_pin = Newtons(300);
+        // allowable = 124 * 5 * 3 = 1,860, design = 600 → PASS
+        assert!(validate_pin_bearing_stress(&plate).is_ok());
+    }
+
+    #[test]
+    fn test_pin_bearing_matrix_brass_3_2_200() {
+        let mut plate = valid_plate();
+        plate.material = Material::Brass;
+        plate.pin_diameter = Millimeters(3);
+        plate.plate_thickness = Millimeters(2);
+        plate.expected_force_per_pin = Newtons(200);
+        // allowable = 124 * 3 * 2 = 744, design = 400 → PASS
+        assert!(validate_pin_bearing_stress(&plate).is_ok());
+    }
+
+    #[test]
+    fn test_pin_bearing_matrix_brass_3_2_500() {
+        let mut plate = valid_plate();
+        plate.material = Material::Brass;
+        plate.pin_diameter = Millimeters(3);
+        plate.plate_thickness = Millimeters(2);
+        plate.expected_force_per_pin = Newtons(500);
+        // allowable = 124 * 3 * 2 = 744, design = 1000 → FAIL
+        assert!(validate_pin_bearing_stress(&plate).is_err());
+    }
+
+    // Stress utilization tests
+    #[test]
+    fn test_utilization_ratios_are_positive() {
+        let plate = valid_plate();
+        let u = stress_utilization(&plate);
+        assert!(u.pin_bearing > 0.0);
+        assert!(u.bolt_bearing > 0.0);
+        assert!(u.bending >= 0.0);
+    }
+
+    #[test]
+    fn test_utilization_below_one_for_valid_plate() {
+        let plate = valid_plate();
+        let u = stress_utilization(&plate);
+        assert!(u.pin_bearing < 1.0, "pin_bearing={}", u.pin_bearing);
+        assert!(u.bolt_bearing < 1.0, "bolt_bearing={}", u.bolt_bearing);
+        assert!(u.bending < 1.0, "bending={}", u.bending);
+    }
+
+    #[test]
+    fn test_utilization_increases_with_force() {
+        let mut plate = valid_plate();
+        plate.expected_force_per_pin = Newtons(100);
+        let u_low = stress_utilization(&plate);
+
+        plate.expected_force_per_pin = Newtons(10000);
+        let u_high = stress_utilization(&plate);
+
+        assert!(u_high.pin_bearing > u_low.pin_bearing);
+        assert!(u_high.bolt_bearing > u_low.bolt_bearing);
+        assert!(u_high.bending > u_low.bending);
     }
 }
