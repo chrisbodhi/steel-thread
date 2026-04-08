@@ -88,7 +88,7 @@ tf-destroy:
     read
     cd terraform && terraform destroy
 
-# Set zoo CLI token in AWS Secrets Manager
+# Set zoo CLI token in AWS Secrets Manager (reads from ~/.config/zoo/hosts.toml, or pipe a token via stdin)
 set-zoo-token:
     #!/usr/bin/env bash
     set -e
@@ -98,7 +98,11 @@ set-zoo-token:
         echo "❌ No Secrets Manager ARN found. Run 'just tf-apply' first."
         exit 1
     fi
-    ZOO_TOKEN=$(grep 'token =' ~/.config/zoo/hosts.toml | cut -d'"' -f2)
+    if [ ! -t 0 ]; then
+        ZOO_TOKEN=$(cat)
+    else
+        ZOO_TOKEN=$(grep '^token =' ~/.config/zoo/hosts.toml | cut -d'"' -f2)
+    fi
     if [ -z "$ZOO_TOKEN" ]; then
         echo "❌ Could not find zoo token in ~/.config/zoo/hosts.toml"
         exit 1
