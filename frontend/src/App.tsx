@@ -337,8 +337,12 @@ export function App() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg lg:text-xl font-bold tracking-tight">Platerator</h1>
-              <p className="text-[10px] lg:text-xs text-muted-foreground uppercase tracking-wider">Actuator Configurator</p>
+              <h1 className="text-lg lg:text-xl font-bold tracking-tight">
+                Platerator
+              </h1>
+              <p className="text-[10px] lg:text-xs text-muted-foreground uppercase tracking-wider">
+                Actuator Mounting Plate Configurator
+              </p>
             </div>
           </div>
           <ThemePicker />
