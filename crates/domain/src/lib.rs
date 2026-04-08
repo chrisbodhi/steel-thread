@@ -307,8 +307,7 @@ mod tests {
     #[test]
     fn test_cache_key_differs_for_different_plates() {
         let plate1 = ActuatorPlate::default();
-        let mut plate2 = ActuatorPlate::default();
-        plate2.bolt_spacing = Millimeters(61);
+        let plate2 = ActuatorPlate { bolt_spacing: Millimeters(61), ..Default::default() };
 
         assert_ne!(plate1.cache_key(), plate2.cache_key());
     }
@@ -316,8 +315,7 @@ mod tests {
     #[test]
     fn test_cache_key_differs_for_different_materials() {
         let plate1 = ActuatorPlate::default();
-        let mut plate2 = ActuatorPlate::default();
-        plate2.material = Material::StainlessSteel;
+        let plate2 = ActuatorPlate { material: Material::StainlessSteel, ..Default::default() };
 
         assert_ne!(plate1.cache_key(), plate2.cache_key());
     }
@@ -410,8 +408,7 @@ mod tests {
     #[test]
     fn test_cache_key_differs_for_different_forces() {
         let plate1 = ActuatorPlate::default();
-        let mut plate2 = ActuatorPlate::default();
-        plate2.expected_force_per_pin = Newtons(1000);
+        let plate2 = ActuatorPlate { expected_force_per_pin: Newtons(1000), ..Default::default() };
 
         assert_ne!(plate1.cache_key(), plate2.cache_key());
     }

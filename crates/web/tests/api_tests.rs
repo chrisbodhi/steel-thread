@@ -68,7 +68,7 @@ async fn test_generate_endpoint_invalid_plate() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["success"], false);
-    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(!json["errors"].as_array().unwrap().is_empty());
 }
 
 // This test validates that the endpoint is properly wired, but will fail
@@ -113,7 +113,7 @@ async fn test_generate_endpoint_valid_plate() {
         // If zoo is not available
         assert_eq!(status, StatusCode::BAD_REQUEST);
         assert_eq!(json["success"], false);
-        assert!(json["errors"].as_array().unwrap().len() > 0);
+        assert!(!json["errors"].as_array().unwrap().is_empty());
     }
 
     // No cleanup needed - temp files are automatically cleaned up
@@ -187,7 +187,7 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], false);
-    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(!json["errors"].as_array().unwrap().is_empty());
     assert!(json["errors"][0]
         .as_str()
         .unwrap()
@@ -227,6 +227,6 @@ async fn test_validate_endpoint_invalid_pin_count() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], false);
-    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(!json["errors"].as_array().unwrap().is_empty());
     assert!(json["errors"][0].as_str().unwrap().contains("pin count"));
 }

@@ -164,7 +164,7 @@ pub fn validate_bolt_bearing_stress(plate: &ActuatorPlate) -> Result<(), PlateVa
 
     // Ceiling division: (total + bolt_count - 1) / bolt_count
     let bolt_count = ASSUMED_BOLT_COUNT as u64;
-    let force_per_bolt = (total_design_force + bolt_count - 1) / bolt_count;
+    let force_per_bolt = total_design_force.div_ceil(bolt_count);
 
     let yield_mpa = plate.material.yield_strength_mpa() as u64;
     let bolt_d = plate.bolt_size.nominal_diameter_mm() as u64;
@@ -315,7 +315,7 @@ pub fn minimum_thickness_mm(plate: &ActuatorPlate) -> u16 {
     // From bearing: t ≥ design_force / (yield × pin_diameter)
     // Ceiling division
     let t_bearing = if yield_mpa * pin_d > 0 {
-        (design_force + yield_mpa * pin_d - 1) / (yield_mpa * pin_d)
+        design_force.div_ceil(yield_mpa * pin_d)
     } else {
         1
     };
@@ -329,7 +329,7 @@ pub fn minimum_thickness_mm(plate: &ActuatorPlate) -> u16 {
     let denominator = 2 * yield_mpa * width;
 
     let t_bending_sq = if denominator > 0 {
-        (numerator + denominator - 1) / denominator
+        numerator.div_ceil(denominator)
     } else {
         1
     };
@@ -1063,8 +1063,7 @@ mod tests {
 
     #[test]
     fn test_extreme_force_fails_default_plate() {
-        let mut plate = ActuatorPlate::default();
-        plate.expected_force_per_pin = Newtons(100_000);
+        let plate = ActuatorPlate { expected_force_per_pin: Newtons(100_000), ..Default::default() };
         assert!(validate(&plate).is_err());
     }
 
