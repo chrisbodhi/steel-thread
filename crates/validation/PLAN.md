@@ -4,7 +4,7 @@
 
 - [x] **Phase 1**: Domain Type Changes — `Newtons` type, material properties, `expected_force_per_pin` field
 - [x] **Phase 2**: Validation Logic — stress check functions
-- [ ] **Phase 3**: WASM Bindings
+- [x] **Phase 3**: WASM Bindings
 - [ ] **Phase 4**: Web API Updates
 - [ ] **Phase 5**: Frontend Updates
 - [ ] **Phase 6**: Testing Strategy
@@ -24,6 +24,16 @@
 - Updated web test plates to use `ActuatorPlate::default()` (structurally sound)
 - Added `Newtons` to OpenAPI schema registration
 - Total test count: 71 (up from 49)
+
+### Phase 3 Notes
+- Added `wasm_validate_expected_force()` for single-field force validation
+- Added `wasm_validate_stress()` — full stress analysis taking all 9 flat params
+  (wasm-bindgen can't pass structs, so it constructs `ActuatorPlate` internally)
+- Added `wasm_minimum_thickness()` — advisory minimum thickness computation
+- Helper functions `parse_bolt_size()` and `parse_material()` convert strings to enums
+- TypeScript wrappers: `validateExpectedForce()`, `validateStress()`, `getMinimumThickness()`
+- `validateStress` uses a params object for ergonomic TS usage
+- `getMinimumThickness` returns 0 on WASM error (graceful degradation)
 
 ---
 
