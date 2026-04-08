@@ -33,7 +33,8 @@ Example:
   process.exit(0);
 }
 
-const toCamelCase = (str: string): string => str.replace(/-([a-z])/g, g => g[1].toUpperCase());
+const toCamelCase = (str: string): string =>
+  str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
 
 const parseValue = (value: string): any => {
   if (value === "true") return true;
@@ -42,7 +43,7 @@ const parseValue = (value: string): any => {
   if (/^\d+$/.test(value)) return parseInt(value, 10);
   if (/^\d*\.\d+$/.test(value)) return parseFloat(value);
 
-  if (value.includes(",")) return value.split(",").map(v => v.trim());
+  if (value.includes(",")) return value.split(",").map((v) => v.trim());
 
   return value;
 };
@@ -62,7 +63,10 @@ function parseArgs(): Partial<Bun.BuildConfig> {
       continue;
     }
 
-    if (!arg.includes("=") && (i === args.length - 1 || args[i + 1]?.startsWith("--"))) {
+    if (
+      !arg.includes("=") &&
+      (i === args.length - 1 || args[i + 1]?.startsWith("--"))
+    ) {
       const key = toCamelCase(arg.slice(2));
       config[key] = true;
       continue;
@@ -109,7 +113,8 @@ console.log("\n🚀 Starting build process...\n");
 
 const cliConfig = parseArgs();
 // Output to crates/web/dist so Rust can serve static files in production
-const outdir = cliConfig.outdir || path.join(process.cwd(), "..", "crates", "web", "dist");
+const outdir =
+  cliConfig.outdir || path.join(process.cwd(), "..", "crates", "web", "dist");
 
 if (existsSync(outdir)) {
   console.log(`🗑️ Cleaning previous build at ${outdir}`);
@@ -119,9 +124,11 @@ if (existsSync(outdir)) {
 const start = performance.now();
 
 const entrypoints = [...new Bun.Glob("**.html").scanSync("src")]
-  .map(a => path.resolve("src", a))
-  .filter(dir => !dir.includes("node_modules"));
-console.log(`📄 Found ${entrypoints.length} HTML ${entrypoints.length === 1 ? "file" : "files"} to process\n`);
+  .map((a) => path.resolve("src", a))
+  .filter((dir) => !dir.includes("node_modules"));
+console.log(
+  `📄 Found ${entrypoints.length} HTML ${entrypoints.length === 1 ? "file" : "files"} to process\n`,
+);
 
 const result = await Bun.build({
   entrypoints,
@@ -132,13 +139,17 @@ const result = await Bun.build({
   sourcemap: "linked",
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
+    "window.__ENV__": JSON.stringify({
+      POSTHOG_KEY: process.env.POSTHOG_KEY ?? "",
+      POSTHOG_HOST: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
+    }),
   },
   ...cliConfig,
 });
 
 const end = performance.now();
 
-const outputTable = result.outputs.map(output => ({
+const outputTable = result.outputs.map((output) => ({
   File: path.relative(process.cwd(), output.path),
   Type: output.kind,
   Size: formatFileSize(output.size),
@@ -156,7 +167,9 @@ if (existsSync(wasmSrc)) {
   await cp(wasmSrc, wasmDest, { recursive: true });
   console.log("✅ WASM module copied");
 } else {
-  console.warn("⚠️  WASM validation module not found. Run 'just build-wasm' first.");
+  console.warn(
+    "⚠️  WASM validation module not found. Run 'just build-wasm' first.",
+  );
 }
 
 console.log(`\n✅ Build completed in ${buildTime}ms\n`);

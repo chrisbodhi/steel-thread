@@ -18,7 +18,11 @@
       "Bash(terraform validate:*)",
       "Bash(terraform state show:*)",
       "Bash(terraform state list:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:bun.com)",
+      "mcp__acp__Bash",
+      "mcp__acp__Write",
+      "mcp__acp__Edit"
     ],
     "deny": [],
     "ask": []

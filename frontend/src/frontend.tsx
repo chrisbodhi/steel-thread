@@ -7,15 +7,24 @@
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { PostHogProvider } from "@posthog/react";
 import { ThemeProvider } from "@/lib/theme";
 import { App } from "./App";
+
+declare const window: Window & {
+  __ENV__?: { POSTHOG_KEY: string; POSTHOG_HOST: string };
+};
+const POSTHOG_KEY = window.__ENV__?.POSTHOG_KEY ?? "";
+const POSTHOG_HOST = window.__ENV__?.POSTHOG_HOST ?? "https://us.i.posthog.com";
 
 const elem = document.getElementById("root")!;
 const app = (
   <StrictMode>
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
+    <PostHogProvider apiKey={POSTHOG_KEY} options={{ api_host: POSTHOG_HOST }}>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </PostHogProvider>
   </StrictMode>
 );
 
