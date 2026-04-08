@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use domain::{ActuatorPlate, BoltSize, Material, Millimeters};
+use domain::{ActuatorPlate, BoltSize, Material, Millimeters, Newtons};
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -48,6 +48,7 @@ async fn test_generate_endpoint_invalid_plate() {
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -67,7 +68,7 @@ async fn test_generate_endpoint_invalid_plate() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["success"], false);
-    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(!json["errors"].as_array().unwrap().is_empty());
 }
 
 // This test validates that the endpoint is properly wired, but will fail
@@ -77,16 +78,7 @@ async fn test_generate_endpoint_invalid_plate() {
 async fn test_generate_endpoint_valid_plate() {
     let app = create_test_router();
 
-    let plate = ActuatorPlate {
-        bolt_spacing: Millimeters(60),
-        bolt_size: BoltSize::M10,
-        bracket_height: Millimeters(40),
-        bracket_width: Millimeters(30),
-        material: Material::Aluminum,
-        pin_diameter: Millimeters(10),
-        pin_count: 6,
-        plate_thickness: Millimeters(8),
-    };
+    let plate = ActuatorPlate::default();
 
     let response = app
         .oneshot(
@@ -121,7 +113,7 @@ async fn test_generate_endpoint_valid_plate() {
         // If zoo is not available
         assert_eq!(status, StatusCode::BAD_REQUEST);
         assert_eq!(json["success"], false);
-        assert!(json["errors"].as_array().unwrap().len() > 0);
+        assert!(!json["errors"].as_array().unwrap().is_empty());
     }
 
     // No cleanup needed - temp files are automatically cleaned up
@@ -131,16 +123,7 @@ async fn test_generate_endpoint_valid_plate() {
 async fn test_validate_endpoint_valid_plate() {
     let app = create_test_router();
 
-    let plate = ActuatorPlate {
-        bolt_spacing: Millimeters(60),
-        bolt_size: BoltSize::M10,
-        bracket_height: Millimeters(40),
-        bracket_width: Millimeters(30),
-        material: Material::Aluminum,
-        pin_diameter: Millimeters(10),
-        pin_count: 6,
-        plate_thickness: Millimeters(8),
-    };
+    let plate = ActuatorPlate::default();
 
     let response = app
         .oneshot(
@@ -160,6 +143,15 @@ async fn test_validate_endpoint_valid_plate() {
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], true);
     assert!(json.get("message").is_some());
+
+    // Verify stress summary is present
+    let summary = &json["stress_summary"];
+    assert_eq!(summary["safety_factor"], 2.0);
+    assert!(summary["pin_bearing_utilization"].as_f64().unwrap() > 0.0);
+    assert!(summary["pin_bearing_utilization"].as_f64().unwrap() < 1.0);
+    assert!(summary["bolt_bearing_utilization"].as_f64().unwrap() > 0.0);
+    assert!(summary["bending_utilization"].as_f64().unwrap() >= 0.0);
+    assert!(summary["minimum_thickness_mm"].as_u64().unwrap() >= 1);
 }
 
 #[tokio::test]
@@ -175,6 +167,7 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
         pin_diameter: Millimeters(10),
         pin_count: 6,
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -194,7 +187,7 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], false);
-    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(!json["errors"].as_array().unwrap().is_empty());
     assert!(json["errors"][0]
         .as_str()
         .unwrap()
@@ -214,6 +207,7 @@ async fn test_validate_endpoint_invalid_pin_count() {
         pin_diameter: Millimeters(10),
         pin_count: 13, // Invalid! Max is 12
         plate_thickness: Millimeters(8),
+        expected_force_per_pin: Newtons(500),
     };
 
     let response = app
@@ -233,6 +227,6 @@ async fn test_validate_endpoint_invalid_pin_count() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], false);
-    assert!(json["errors"].as_array().unwrap().len() > 0);
+    assert!(!json["errors"].as_array().unwrap().is_empty());
     assert!(json["errors"][0].as_str().unwrap().contains("pin count"));
 }

@@ -234,8 +234,7 @@ mod tests {
 
     #[test]
     fn test_generate_step_fails_with_invalid_plate() {
-        let mut plate = ActuatorPlate::default();
-        plate.bolt_spacing = Millimeters(0); // Invalid bolt spacing
+        let plate = ActuatorPlate { bolt_spacing: Millimeters(0), ..Default::default() }; // Invalid bolt spacing
 
         let temp_dir = TempDir::new().unwrap();
         let result = generate_step_in_dir(&plate, temp_dir.path());
@@ -265,8 +264,7 @@ mod tests {
 
     #[test]
     fn test_generate_model_fails_with_invalid_plate() {
-        let mut plate = ActuatorPlate::default();
-        plate.bolt_spacing = Millimeters(0);
+        let plate = ActuatorPlate { bolt_spacing: Millimeters(0), ..Default::default() };
 
         let result = generate_model(&plate);
 
@@ -311,8 +309,7 @@ mod tests {
 
     #[test]
     fn test_generate_gltf_fails_with_invalid_plate() {
-        let mut plate = ActuatorPlate::default();
-        plate.plate_thickness = Millimeters(0); // Invalid plate thickness
+        let plate = ActuatorPlate { plate_thickness: Millimeters(0), ..Default::default() }; // Invalid plate thickness
 
         let temp_dir = TempDir::new().unwrap();
         let result = generate_gltf_in_dir(&plate, temp_dir.path());

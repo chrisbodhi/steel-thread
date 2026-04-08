@@ -1,5 +1,71 @@
 # Validation Crate Enhancement Plan
 
+## Status
+
+- [x] **Phase 1**: Domain Type Changes — `Newtons` type, material properties, `expected_force_per_pin` field
+- [x] **Phase 2**: Validation Logic — stress check functions
+- [x] **Phase 3**: WASM Bindings
+- [x] **Phase 4**: Web API Updates
+- [x] **Phase 5**: Frontend Updates
+- [x] **Phase 6**: Testing Strategy
+
+### Phase 1 Notes
+- Implemented with Option A (4-bolt assumption, no new bolt_count field)
+- `expected_force_per_pin` added as a required field (not `Option`), breaking change accepted
+- All 49 existing tests updated and passing
+- 8 new domain tests added (material properties, density/yield ordering, force cache key)
+
+### Phase 2 Notes
+- All 5 stress checks implemented with integer-only arithmetic (no floating point)
+- Uses u64 intermediates to prevent overflow
+- `minimum_thickness_mm()` advisory function added for frontend guidance
+- 22 new validation tests covering: pass/fail for each check, boundary conditions,
+  safety factor verification, material-change flip tests, thickness-fix tests
+- Updated web test plates to use `ActuatorPlate::default()` (structurally sound)
+- Added `Newtons` to OpenAPI schema registration
+- Total test count: 71 (up from 49)
+
+### Phase 3 Notes
+- Added `wasm_validate_expected_force()` for single-field force validation
+- Added `wasm_validate_stress()` — full stress analysis taking all 9 flat params
+  (wasm-bindgen can't pass structs, so it constructs `ActuatorPlate` internally)
+- Added `wasm_minimum_thickness()` — advisory minimum thickness computation
+- Helper functions `parse_bolt_size()` and `parse_material()` convert strings to enums
+- TypeScript wrappers: `validateExpectedForce()`, `validateStress()`, `getMinimumThickness()`
+- `validateStress` uses a params object for ergonomic TS usage
+- `getMinimumThickness` returns 0 on WASM error (graceful degradation)
+
+### Phase 4 Notes
+- Added `stress_utilization()` function to validation crate returning `StressUtilization`
+  struct with pin_bearing, bolt_bearing, and bending ratios (f32, 0.0–1.0)
+- Uses floating point for ratios (acceptable since this is a convenience function,
+  not the core validation logic which remains integer-only)
+- `ValidationSuccessResponse` now includes `stress_summary` with utilization ratios,
+  safety_factor (always 2.0), and minimum_thickness_mm
+- `StressSummary` registered in OpenAPI schemas
+- `Newtons` was already in schemas from Phase 1
+- Web test updated to verify stress_summary fields are present and sensible
+
+### Phase 5 Notes
+- Added "Loading" field group with "Force per Pin (N)" input (default 500 N)
+- Shows "2x safety factor applied" note next to the force field
+- Client-side stress validation via `validateStress()` WASM call before API submission
+- On stress failure: amber warning banner with error message + minimum recommended thickness
+- `expected_force_per_pin` included in API request body
+- Form validation state extended with `expectedForce` field
+
+### Phase 6 Notes
+- Added `MAX_FORCE_PER_PIN: u32 = 100_000` constant and `ExpectedForceTooLarge` error variant
+- Force upper bound tests: accepted at 100,000 N, rejected at 100,001 N
+- Integer overflow protection test: max u16 dimensions + max force don't overflow u64
+- Default plate passes all checks; extreme force (99,999 N) fails on default plate
+- Test matrix from plan: 4 pin bearing cases (aluminum/brass, various dimensions/forces)
+- Utilization ratio tests: positive for valid plate, below 1.0, increases with force
+- Full plate validation rejects excessive force (100,001 N)
+- Total test count: 84 (14 domain + 55 validation + 5 web cache + 4 parametric + 6 API)
+
+---
+
 ## Objective
 
 Enhance the validation crate to perform **engineering stress analysis** that accounts for

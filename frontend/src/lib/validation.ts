@@ -13,6 +13,9 @@ import init, {
   wasm_validate_pin_diameter,
   wasm_validate_pin_count,
   wasm_validate_plate_thickness,
+  wasm_validate_expected_force,
+  wasm_validate_stress,
+  wasm_minimum_thickness,
 } from '../wasm-validation/validation.js';
 
 // Initialize WASM module on first import
@@ -136,4 +139,77 @@ export async function validatePlateThickness(value: number): Promise<ValidationR
 export async function validateMaterial(value: string): Promise<ValidationResult> {
   await initValidation();
   return validate(() => wasm_validate_material(value));
+}
+
+/**
+ * Validate expected force per pin value (in Newtons).
+ */
+export async function validateExpectedForce(value: number): Promise<ValidationResult> {
+  await initValidation();
+  return validate(() => wasm_validate_expected_force(value));
+}
+
+/**
+ * Run full stress analysis on a plate configuration.
+ *
+ * Checks all basic constraints plus engineering stress checks
+ * (pin bearing, bolt bearing, plate bending, edge distance, pin clearance)
+ * with a 2x safety factor on forces.
+ */
+export async function validateStress(params: {
+  boltSpacing: number;
+  boltSize: string;
+  bracketHeight: number;
+  bracketWidth: number;
+  material: string;
+  pinDiameter: number;
+  pinCount: number;
+  plateThickness: number;
+  expectedForcePerPin: number;
+}): Promise<ValidationResult> {
+  await initValidation();
+  return validate(() =>
+    wasm_validate_stress(
+      params.boltSpacing,
+      params.boltSize,
+      params.bracketHeight,
+      params.bracketWidth,
+      params.material,
+      params.pinDiameter,
+      params.pinCount,
+      params.plateThickness,
+      params.expectedForcePerPin,
+    ),
+  );
+}
+
+/**
+ * Get the minimum recommended plate thickness (mm) for the given configuration.
+ *
+ * Returns the smallest thickness that satisfies bearing and bending constraints.
+ * Returns 0 if the WASM module fails to compute.
+ */
+export async function getMinimumThickness(params: {
+  boltSpacing: number;
+  boltSize: string;
+  bracketWidth: number;
+  material: string;
+  pinDiameter: number;
+  pinCount: number;
+  expectedForcePerPin: number;
+}): Promise<number> {
+  await initValidation();
+  try {
+    return wasm_minimum_thickness(
+      params.boltSpacing,
+      params.boltSize,
+      params.bracketWidth,
+      params.material,
+      params.pinDiameter,
+      params.pinCount,
+      params.expectedForcePerPin,
+    );
+  } catch {
+    return 0;
+  }
 }
