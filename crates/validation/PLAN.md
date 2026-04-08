@@ -6,7 +6,7 @@
 - [x] **Phase 2**: Validation Logic — stress check functions
 - [x] **Phase 3**: WASM Bindings
 - [x] **Phase 4**: Web API Updates
-- [ ] **Phase 5**: Frontend Updates
+- [x] **Phase 5**: Frontend Updates
 - [ ] **Phase 6**: Testing Strategy
 
 ### Phase 1 Notes
@@ -45,6 +45,14 @@
 - `StressSummary` registered in OpenAPI schemas
 - `Newtons` was already in schemas from Phase 1
 - Web test updated to verify stress_summary fields are present and sensible
+
+### Phase 5 Notes
+- Added "Loading" field group with "Force per Pin (N)" input (default 500 N)
+- Shows "2x safety factor applied" note next to the force field
+- Client-side stress validation via `validateStress()` WASM call before API submission
+- On stress failure: amber warning banner with error message + minimum recommended thickness
+- `expected_force_per_pin` included in API request body
+- Form validation state extended with `expectedForce` field
 
 ---
 

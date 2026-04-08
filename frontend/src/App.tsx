@@ -30,6 +30,9 @@ import {
   validatePinDiameter,
   validatePinCount,
   validatePlateThickness,
+  validateExpectedForce,
+  validateStress,
+  getMinimumThickness,
   type ValidationResult,
 } from "./lib/validation";
 
@@ -257,6 +260,10 @@ export function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [modelSrc, setModelSrc] = useState<string | null>(null);
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
+  const [stressResult, setStressResult] = useState<{
+    error?: string;
+    minThickness?: number;
+  } | null>(null);
   const [fieldValidationState, setFieldValidationState] = useState<Record<string, boolean>>({
     boltSpacing: true,
     boltSize: true,
@@ -266,6 +273,7 @@ export function App() {
     pinDiameter: true,
     pinCount: true,
     plateThickness: true,
+    expectedForce: true,
   });
 
   const handleValidationChange = useCallback((fieldName: string, isValid: boolean) => {
@@ -288,15 +296,38 @@ export function App() {
       const form = e.currentTarget;
       const formData = new FormData(form);
 
+      const params = {
+        boltSpacing: Number(formData.get("boltSpacing")),
+        boltSize: String(formData.get("boltSize")),
+        bracketHeight: Number(formData.get("bracketHeight")),
+        bracketWidth: Number(formData.get("bracketWidth")),
+        material: String(formData.get("material")),
+        pinDiameter: Number(formData.get("pinDiameter")),
+        pinCount: Number(formData.get("pinCount")),
+        plateThickness: Number(formData.get("plateThickness")),
+        expectedForcePerPin: Number(formData.get("expectedForce")),
+      };
+
+      // Run stress check before submitting
+      const stress = await validateStress(params);
+      if (!stress.valid) {
+        const minT = await getMinimumThickness(params);
+        setStressResult({ error: stress.error, minThickness: minT });
+        setIsLoading(false);
+        return;
+      }
+      setStressResult(null);
+
       const body = JSON.stringify({
-        bolt_spacing: Number(formData.get("boltSpacing")),
-        bolt_size: formData.get("boltSize"),
-        bracket_height: Number(formData.get("bracketHeight")),
-        bracket_width: Number(formData.get("bracketWidth")),
-        material: formData.get("material"),
-        pin_diameter: Number(formData.get("pinDiameter")),
-        pin_count: Number(formData.get("pinCount")),
-        plate_thickness: Number(formData.get("plateThickness")),
+        bolt_spacing: params.boltSpacing,
+        bolt_size: params.boltSize,
+        bracket_height: params.bracketHeight,
+        bracket_width: params.bracketWidth,
+        material: params.material,
+        pin_diameter: params.pinDiameter,
+        pin_count: params.pinCount,
+        plate_thickness: params.plateThickness,
+        expected_force_per_pin: params.expectedForcePerPin,
       });
 
       const res = await fetch("/api/generate", {
@@ -480,6 +511,22 @@ export function App() {
                     />
                   </FieldGroup>
 
+                  <FieldGroup title="Loading">
+                    <Combined
+                      forProp="expectedForce"
+                      name="Force per Pin"
+                      defaultValue="500"
+                      validator={(v) => validateExpectedForce(v)}
+                      onValidationChange={handleValidationChange}
+                      unit="N"
+                    />
+                    <div className="flex items-end">
+                      <p className="text-[10px] text-muted-foreground pb-2">
+                        2x safety factor applied
+                      </p>
+                    </div>
+                  </FieldGroup>
+
                   <div className="pt-2 space-y-3">
                     <Button
                       type="submit"
@@ -508,6 +555,26 @@ export function App() {
                       <p className="text-[10px] text-muted-foreground text-center">
                         Fix validation errors to continue
                       </p>
+                    )}
+
+                    {stressResult?.error && (
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-start gap-1.5">
+                          <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                          <span>
+                            {stressResult.error}
+                            {stressResult.minThickness ? (
+                              <span className="block mt-1 text-[10px] opacity-80">
+                                Minimum recommended thickness: {stressResult.minThickness} mm
+                              </span>
+                            ) : null}
+                          </span>
+                        </p>
+                      </div>
                     )}
 
                     {downloadUrl && (
