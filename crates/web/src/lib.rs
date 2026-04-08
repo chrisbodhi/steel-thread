@@ -46,6 +46,7 @@ use uuid::Uuid;
             domain::BoltSize,
             OkResponse,
             ValidationSuccessResponse,
+            StressSummary,
             ValidationErrorResponse,
             GenerateSuccessResponse,
             ErrorResponse,
@@ -235,9 +236,19 @@ async fn health() -> impl IntoResponse {
 async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse {
     match validation::validate(&payload) {
         Ok(()) => {
+            let utilization = validation::stress_utilization(&payload);
+            let min_thickness = validation::minimum_thickness_mm(&payload);
+
             let res = ValidationSuccessResponse {
                 valid: true,
                 message: "Actuator plate parameters are valid".to_string(),
+                stress_summary: StressSummary {
+                    safety_factor: 2.0,
+                    pin_bearing_utilization: utilization.pin_bearing,
+                    bolt_bearing_utilization: utilization.bolt_bearing,
+                    bending_utilization: utilization.bending,
+                    minimum_thickness_mm: min_thickness,
+                },
             };
             (StatusCode::OK, Json(res)).into_response()
         }
@@ -521,6 +532,23 @@ struct ValidationSuccessResponse {
     valid: bool,
     /// Human-readable success message
     message: String,
+    /// Stress analysis summary (included when plate passes validation)
+    stress_summary: StressSummary,
+}
+
+/// Stress analysis summary showing utilization ratios and recommended minimums.
+#[derive(Serialize, ToSchema)]
+struct StressSummary {
+    /// Safety factor applied to all force calculations (always 2.0)
+    safety_factor: f32,
+    /// Pin bearing stress utilization (0.0–1.0, design_force / allowable)
+    pin_bearing_utilization: f32,
+    /// Bolt bearing stress utilization (0.0–1.0, force_per_bolt / allowable)
+    bolt_bearing_utilization: f32,
+    /// Plate bending stress utilization (0.0–1.0, bending_stress / yield)
+    bending_utilization: f32,
+    /// Minimum plate thickness (mm) that satisfies all stress constraints
+    minimum_thickness_mm: u16,
 }
 
 /// Validation error response

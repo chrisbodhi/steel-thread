@@ -143,6 +143,15 @@ async fn test_validate_endpoint_valid_plate() {
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], true);
     assert!(json.get("message").is_some());
+
+    // Verify stress summary is present
+    let summary = &json["stress_summary"];
+    assert_eq!(summary["safety_factor"], 2.0);
+    assert!(summary["pin_bearing_utilization"].as_f64().unwrap() > 0.0);
+    assert!(summary["pin_bearing_utilization"].as_f64().unwrap() < 1.0);
+    assert!(summary["bolt_bearing_utilization"].as_f64().unwrap() > 0.0);
+    assert!(summary["bending_utilization"].as_f64().unwrap() >= 0.0);
+    assert!(summary["minimum_thickness_mm"].as_u64().unwrap() >= 1);
 }
 
 #[tokio::test]

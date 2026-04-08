@@ -5,7 +5,7 @@
 - [x] **Phase 1**: Domain Type Changes — `Newtons` type, material properties, `expected_force_per_pin` field
 - [x] **Phase 2**: Validation Logic — stress check functions
 - [x] **Phase 3**: WASM Bindings
-- [ ] **Phase 4**: Web API Updates
+- [x] **Phase 4**: Web API Updates
 - [ ] **Phase 5**: Frontend Updates
 - [ ] **Phase 6**: Testing Strategy
 
@@ -34,6 +34,17 @@
 - TypeScript wrappers: `validateExpectedForce()`, `validateStress()`, `getMinimumThickness()`
 - `validateStress` uses a params object for ergonomic TS usage
 - `getMinimumThickness` returns 0 on WASM error (graceful degradation)
+
+### Phase 4 Notes
+- Added `stress_utilization()` function to validation crate returning `StressUtilization`
+  struct with pin_bearing, bolt_bearing, and bending ratios (f32, 0.0–1.0)
+- Uses floating point for ratios (acceptable since this is a convenience function,
+  not the core validation logic which remains integer-only)
+- `ValidationSuccessResponse` now includes `stress_summary` with utilization ratios,
+  safety_factor (always 2.0), and minimum_thickness_mm
+- `StressSummary` registered in OpenAPI schemas
+- `Newtons` was already in schemas from Phase 1
+- Web test updated to verify stress_summary fields are present and sensible
 
 ---
 
