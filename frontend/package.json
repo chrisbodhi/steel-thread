@@ -7,6 +7,7 @@
     "dev": "bun --hot src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts",
+    "typecheck": "bunx tsc --noEmit",
     "test:e2e": "bunx playwright test",
     "test:e2e:ui": "bunx playwright test --ui"
   },
@@ -20,6 +21,7 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "lucide-react": "0.545.0",
+    "radix-ui": "1.4.3",
     "react": "19",
     "react-dom": "19",
     "tailwind-merge": "3.3.1"

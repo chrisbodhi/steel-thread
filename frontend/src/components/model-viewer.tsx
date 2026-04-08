@@ -3,24 +3,26 @@ import "@google/model-viewer";
 
 // TypeScript declarations for model-viewer custom element
 declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "model-viewer": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          ref?: React.RefObject<HTMLElement>;
-          src?: string;
-          alt?: string;
-          "auto-rotate"?: boolean;
-          "camera-controls"?: boolean;
-          "shadow-intensity"?: string;
-          "environment-image"?: string;
-          exposure?: string;
-          ar?: boolean;
-          loading?: "auto" | "lazy" | "eager";
-          poster?: string;
-        },
-        HTMLElement
-      >;
+  namespace React {
+    namespace JSX {
+      interface IntrinsicElements {
+        "model-viewer": React.DetailedHTMLProps<
+          React.HTMLAttributes<HTMLElement> & {
+            ref?: React.RefObject<HTMLElement | null>;
+            src?: string;
+            alt?: string;
+            "auto-rotate"?: boolean;
+            "camera-controls"?: boolean;
+            "shadow-intensity"?: string;
+            "environment-image"?: string;
+            exposure?: string;
+            ar?: boolean;
+            loading?: "auto" | "lazy" | "eager";
+            poster?: string;
+          },
+          HTMLElement
+        >;
+      }
     }
   }
 }

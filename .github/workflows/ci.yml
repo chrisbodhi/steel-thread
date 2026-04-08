@@ -60,6 +60,11 @@ jobs:
           cd frontend
           bun install
 
+      - name: Type check frontend
+        run: |
+          cd frontend
+          bun run typecheck
+
       - name: Build frontend
         run: |
           cd frontend

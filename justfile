@@ -28,6 +28,7 @@ build-release: build
 # Run all tests
 test:
     cargo test
+    cd frontend && bun run typecheck
 
 # Clean build artifacts
 clean:

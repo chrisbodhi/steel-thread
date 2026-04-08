@@ -1,54 +1,39 @@
-import { useState } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
-export function AboutSection() {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+export function AboutButton() {
   return (
-    <Card className="backdrop-blur-xl bg-card/80 border-border/50 shadow-lg">
-      <CardHeader className="pb-3">
+    <Dialog>
+      <DialogTrigger asChild>
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full text-left group"
+          type="button"
+          className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+          aria-label="What is Platerator?"
         >
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-primary"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 16v-4" />
-              <path d="M12 8h.01" />
-            </svg>
-            <CardTitle className="text-sm lg:text-base font-semibold">
-              What is Platerator?
-            </CardTitle>
-          </div>
           <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform group-hover:text-primary ${
-              isExpanded ? "rotate-180" : ""
-            }`}
+            className="w-4 h-4"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
           >
-            <polyline points="6 9 12 15 18 9" />
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
           </svg>
+          <span className="text-[10px] uppercase tracking-wider">About</span>
         </button>
-      </CardHeader>
-
-      {isExpanded && (
-        <CardContent className="space-y-4 text-xs lg:text-sm animate-in fade-in slide-in-from-top-2 duration-200 max-h-[300px] overflow-y-auto">
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>What is Platerator?</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
           <div>
             <h4 className="font-semibold text-primary mb-1.5">
               Automated Mounting Plate Design
@@ -67,7 +52,8 @@ export function AboutSection() {
             <p className="text-muted-foreground leading-relaxed">
               Mechanical engineers, robotics developers, and manufacturers who
               need custom actuator mounting solutions. Perfect for prototyping,
-              small batch production, or standardizing mounting hardware across projects.
+              small batch production, or standardizing mounting hardware across
+              projects.
             </p>
           </div>
 
@@ -76,10 +62,11 @@ export function AboutSection() {
               What's a linear actuator?
             </h4>
             <p className="text-muted-foreground leading-relaxed">
-              A linear actuator is a device that creates motion in a straight line,
-              as opposed to rotational motion. Common types include electric motor-driven,
-              pneumatic, and hydraulic actuators. They're used in everything from
-              industrial automation to adjustable furniture.
+              A linear actuator is a device that creates motion in a straight
+              line, as opposed to rotational motion. Common types include
+              electric motor-driven, pneumatic, and hydraulic actuators.
+              They're used in everything from industrial automation to
+              adjustable furniture.
             </p>
           </div>
 
@@ -90,8 +77,9 @@ export function AboutSection() {
             <p className="text-muted-foreground leading-relaxed">
               Actuators need secure attachment points for both the body and the
               extending rod. A well-designed mounting plate provides structural
-              support, proper alignment, and standardized bolt patterns. This tool
-              automates the tedious CAD work of creating these custom brackets.
+              support, proper alignment, and standardized bolt patterns. This
+              tool automates the tedious CAD work of creating these custom
+              brackets.
             </p>
           </div>
 
@@ -101,8 +89,8 @@ export function AboutSection() {
               The 3D preview updates when you generate a model.
             </p>
           </div>
-        </CardContent>
-      )}
-    </Card>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

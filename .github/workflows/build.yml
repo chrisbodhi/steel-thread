@@ -74,6 +74,7 @@ jobs:
         run: |
           cd frontend
           bun install
+          bun run typecheck
           bun run build
 
       - name: Package artifacts

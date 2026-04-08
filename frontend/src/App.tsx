@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "./components/ui/select";
 import { ThemePicker } from "./components/ui/theme-picker";
-import { AboutSection } from "./components/about-section";
+import { AboutButton } from "./components/about-section";
 
 import "./index.css";
 import {
@@ -400,7 +400,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col relative">
+    <div className="h-screen w-full flex flex-col relative overflow-hidden">
       {/* Top navigation bar */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3 lg:px-6 lg:py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -431,7 +431,7 @@ export function App() {
       </header>
 
       {/* Main content area */}
-      <main className="flex-1 flex flex-col lg:flex-row pt-20 lg:pt-24">
+      <main className="flex-1 flex flex-col lg:flex-row pt-20 lg:pt-24 overflow-hidden">
         {/* 3D Viewer - Hero section */}
         <div className="flex-1 relative min-h-[40vh] lg:min-h-0">
           <div className="absolute inset-4 lg:inset-8 rounded-2xl overflow-hidden border border-border/50 backdrop-blur-sm">
@@ -484,35 +484,35 @@ export function App() {
             lg:w-[420px] xl:w-[480px] shrink-0
             transition-all duration-300 ease-out
             ${isPanelExpanded ? "max-h-[70vh] lg:max-h-none" : "max-h-0 lg:max-h-none"}
-            overflow-hidden lg:overflow-visible
+            overflow-hidden lg:overflow-y-auto
           `}
         >
           <div className="h-full p-4 lg:p-6 lg:pr-8 space-y-4">
-            <AboutSection />
             <Card
               className="flex-1 backdrop-blur-xl bg-card/80 border-border/50 shadow-2xl"
               data-card
             >
               <CardHeader className="pb-4">
-                <CardTitle className="text-base lg:text-lg font-semibold flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-primary"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
-                  Configuration
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Set your actuator plate specifications
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base lg:text-lg font-semibold flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-primary"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                    Configuration
+                  </CardTitle>
+                  <AboutButton />
+                </div>
               </CardHeader>
-              <CardContent className="overflow-y-auto max-h-[calc(70vh-180px)] lg:max-h-[calc(100vh-320px)]">
-                <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit}>
+              <CardContent className="overflow-y-auto max-h-[calc(70vh-180px)] lg:max-h-[calc(100vh-400px)]">
+                <div className="space-y-6">
                   <FieldGroup title="Dimensions">
                     <Combined
                       forProp="bracketHeight"
@@ -597,7 +597,9 @@ export function App() {
                     </div>
                   </FieldGroup>
 
-                  <div className="pt-2 space-y-3">
+                </div>
+              </CardContent>
+              <div className="px-6 pb-6 pt-2 space-y-3">
                     <Button
                       type="submit"
                       className="w-full h-11 text-sm font-semibold uppercase tracking-wider transition-all"
@@ -647,7 +649,13 @@ export function App() {
                     {stressResult?.error && (
                       <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
                         <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-start gap-1.5">
-                          <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            className="w-4 h-4 shrink-0 mt-0.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                             <line x1="12" y1="9" x2="12" y2="13" />
                             <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -656,7 +664,8 @@ export function App() {
                             {stressResult.error}
                             {stressResult.minThickness ? (
                               <span className="block mt-1 text-[10px] opacity-80">
-                                Minimum recommended thickness: {stressResult.minThickness} mm
+                                Minimum recommended thickness:{" "}
+                                {stressResult.minThickness} mm
                               </span>
                             ) : null}
                           </span>
@@ -725,9 +734,8 @@ export function App() {
                         </p>
                       </div>
                     )}
-                  </div>
-                </form>
-              </CardContent>
+                </div>
+              </form>
             </Card>
           </div>
         </div>
