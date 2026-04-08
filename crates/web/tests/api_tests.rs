@@ -188,10 +188,10 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], false);
     assert!(!json["errors"].as_array().unwrap().is_empty());
-    assert!(json["errors"][0]
+    assert!(json["errors"][0]["message"]
         .as_str()
         .unwrap()
-        .contains("bolt spacing"));
+        .contains("Bolt spacing"));
 }
 
 #[tokio::test]
@@ -228,5 +228,5 @@ async fn test_validate_endpoint_invalid_pin_count() {
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["valid"], false);
     assert!(!json["errors"].as_array().unwrap().is_empty());
-    assert!(json["errors"][0].as_str().unwrap().contains("pin count"));
+    assert!(json["errors"][0]["message"].as_str().unwrap().contains("Pin count"));
 }

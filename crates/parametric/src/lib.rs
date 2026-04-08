@@ -23,7 +23,7 @@ pub enum GeneratorError {
 #[derive(Debug)]
 pub enum AllErrors {
     GeneratorError(String),
-    ValidationError(String),
+    ValidationErrors(Vec<validation::PlateValidationError>),
 }
 
 /// Result of a successful model generation, containing paths to generated files.
@@ -102,10 +102,8 @@ fn copy_kcl_sources(temp_dir: &Path) -> std::io::Result<()> {
 }
 
 pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErrors> {
-    if let Err(e) = validation::validate(plate) {
-        let msg = format!("Validation failed: {}", e);
-        eprintln!("{}", msg);
-        return Err(AllErrors::ValidationError(msg));
+    if let Err(errors) = validation::validate(plate) {
+        return Err(AllErrors::ValidationErrors(errors));
     }
 
     // Create a temporary directory for this generation request
@@ -164,8 +162,7 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
 
 /// Generate STEP file in the specified directory
 fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
-    if let Err(e) = validation::validate(plate) {
-        eprintln!("oops: {}", e);
+    if validation::validate(plate).is_err() {
         return Err(ValidationError::NoStep);
     }
 
@@ -192,8 +189,7 @@ fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus,
 
 /// Generate glTF file in the specified directory by converting the STEP file
 fn generate_gltf_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
-    if let Err(e) = validation::validate(plate) {
-        eprintln!("oops: {}", e);
+    if validation::validate(plate).is_err() {
         return Err(ValidationError::NoStep);
     }
 
@@ -270,10 +266,10 @@ mod tests {
 
         assert!(result.is_err());
         match result.unwrap_err() {
-            AllErrors::ValidationError(msg) => {
-                assert!(msg.contains("Validation failed"));
+            AllErrors::ValidationErrors(errs) => {
+                assert!(!errs.is_empty());
             }
-            _ => panic!("Expected ValidationError"),
+            AllErrors::GeneratorError(_) => panic!("Expected ValidationErrors"),
         }
     }
 

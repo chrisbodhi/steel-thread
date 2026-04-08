@@ -17,6 +17,7 @@ use axum::{
 };
 use domain::ActuatorPlate;
 use parametric::{generate_model, GenerationResult};
+use validation::PlateValidationError;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -49,7 +50,8 @@ use uuid::Uuid;
             StressSummary,
             ValidationErrorResponse,
             GenerateSuccessResponse,
-            ErrorResponse,
+            GenerateErrorResponse,
+            ErrorDetail,
         )
     ),
     tags(
@@ -252,10 +254,27 @@ async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse
             };
             (StatusCode::OK, Json(res)).into_response()
         }
-        Err(e) => {
+        Err(errors) => {
+            let has_stress_error = errors.iter().any(|e| {
+                matches!(
+                    e,
+                    PlateValidationError::PinBearingStressExceeded { .. }
+                        | PlateValidationError::BoltBearingStressExceeded { .. }
+                        | PlateValidationError::PlateBendingStressExceeded
+                )
+            });
+            let minimum_thickness_mm =
+                if has_stress_error { Some(validation::minimum_thickness_mm(&payload)) } else { None };
             let res = ValidationErrorResponse {
                 valid: false,
-                errors: vec![e.to_string()],
+                errors: errors
+                    .iter()
+                    .map(|e| ErrorDetail {
+                        message: e.to_string(),
+                        fields: e.related_fields().iter().map(|s| s.to_string()).collect(),
+                    })
+                    .collect(),
+                minimum_thickness_mm,
             };
             (StatusCode::BAD_REQUEST, Json(res)).into_response()
         }
@@ -274,7 +293,7 @@ async fn validate_plate(Json(payload): Json<ActuatorPlate>) -> impl IntoResponse
     request_body = ActuatorPlate,
     responses(
         (status = 200, description = "Model files generated successfully", body = GenerateSuccessResponse),
-        (status = 400, description = "Invalid plate configuration", body = ErrorResponse)
+        (status = 400, description = "Invalid plate configuration", body = GenerateErrorResponse)
     )
 )]
 pub async fn generate_plate_model(
@@ -360,15 +379,36 @@ pub async fn generate_plate_model(
         }
         Err(e) => {
             tracing::error!("generation error: {:?}", e);
-            let error_msg = match e {
-                parametric::AllErrors::ValidationError(msg) => msg,
-                parametric::AllErrors::GeneratorError(msg) => msg,
+            let (errors, minimum_thickness_mm) = match e {
+                parametric::AllErrors::ValidationErrors(errs) => {
+                    let has_stress_error = errs.iter().any(|e| {
+                        matches!(
+                            e,
+                            PlateValidationError::PinBearingStressExceeded { .. }
+                                | PlateValidationError::BoltBearingStressExceeded { .. }
+                                | PlateValidationError::PlateBendingStressExceeded
+                        )
+                    });
+                    let min_t = if has_stress_error {
+                        Some(validation::minimum_thickness_mm(&payload))
+                    } else {
+                        None
+                    };
+                    let details = errs
+                        .iter()
+                        .map(|e| ErrorDetail {
+                            message: e.to_string(),
+                            fields: e.related_fields().iter().map(|s| s.to_string()).collect(),
+                        })
+                        .collect();
+                    (details, min_t)
+                }
+                parametric::AllErrors::GeneratorError(msg) => (
+                    vec![ErrorDetail { message: msg, fields: vec![] }],
+                    None,
+                ),
             };
-            let res = ErrorResponse {
-                success: false,
-                got_it: false,
-                errors: vec![error_msg],
-            };
+            let res = GenerateErrorResponse { success: false, errors, minimum_thickness_mm };
             (StatusCode::BAD_REQUEST, Json(res)).into_response()
         }
     }
@@ -514,7 +554,27 @@ struct GenerateSuccessResponse {
     session_id: String,
 }
 
-/// Error response
+/// A single validation error with the message and the form fields it implicates.
+#[derive(Serialize, ToSchema)]
+struct ErrorDetail {
+    /// Human-readable error message
+    message: String,
+    /// Form field name(s) implicated by this error (e.g. ["plateThickness", "expectedForce"])
+    fields: Vec<String>,
+}
+
+/// Error response for generation failures
+#[derive(Serialize, ToSchema)]
+struct GenerateErrorResponse {
+    /// Always false for error responses
+    success: bool,
+    /// Structured list of errors with implicated fields
+    errors: Vec<ErrorDetail>,
+    /// Minimum plate thickness (mm) that would satisfy stress constraints, if applicable
+    minimum_thickness_mm: Option<u16>,
+}
+
+/// Legacy error response (used for download/session errors only)
 #[derive(Serialize, ToSchema)]
 struct ErrorResponse {
     /// Always false for error responses
@@ -556,6 +616,8 @@ struct StressSummary {
 struct ValidationErrorResponse {
     /// Always false for invalid plates
     valid: bool,
-    /// List of validation error messages
-    errors: Vec<String>,
+    /// Structured list of errors with implicated fields
+    errors: Vec<ErrorDetail>,
+    /// Minimum plate thickness (mm) that would satisfy stress constraints, if applicable
+    minimum_thickness_mm: Option<u16>,
 }

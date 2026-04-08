@@ -1,5 +1,7 @@
 #![no_std]
+extern crate alloc;
 
+use alloc::vec::Vec;
 use domain::ActuatorPlate;
 
 // WebAssembly bindings (only compiled for wasm32 target)
@@ -23,26 +25,37 @@ const SAFETY_FACTOR: u32 = 2;
 /// Assumed number of mounting bolts in a standard rectangular pattern.
 const ASSUMED_BOLT_COUNT: u32 = 4;
 
-pub fn validate(plate: &ActuatorPlate) -> Result<(), PlateValidationError> {
-    // Phase 1: Basic geometry constraints
-    validate_bolt_spacing(plate.bolt_spacing.0)?;
-    // bolt_size is validated by the type system (enum only allows valid ISO sizes)
-    validate_bracket_height(plate.bracket_height.0)?;
-    validate_bracket_width(plate.bracket_width.0)?;
-    // material is validated by the type system (enum only allows valid materials)
-    validate_pin_diameter(plate.pin_diameter.0)?;
-    validate_pin_count(plate.pin_count)?;
-    validate_plate_thickness(plate.plate_thickness.0)?;
-    validate_expected_force(plate.expected_force_per_pin.0)?;
+pub fn validate(plate: &ActuatorPlate) -> Result<(), Vec<PlateValidationError>> {
+    let mut errors = Vec::new();
 
-    // Phase 2: Stress analysis (material + force + thickness)
-    validate_pin_bearing_stress(plate)?;
-    validate_bolt_bearing_stress(plate)?;
-    validate_plate_bending_stress(plate)?;
-    validate_bolt_edge_distance(plate)?;
-    validate_pin_clearance(plate)?;
+    // Phase 1: Basic geometry constraints — collect all failures.
+    // bolt_size and material are validated by the type system.
+    macro_rules! collect {
+        ($result:expr) => {
+            if let Err(e) = $result {
+                errors.push(e);
+            }
+        };
+    }
+    collect!(validate_bolt_spacing(plate.bolt_spacing.0));
+    collect!(validate_bracket_height(plate.bracket_height.0));
+    collect!(validate_bracket_width(plate.bracket_width.0));
+    collect!(validate_pin_diameter(plate.pin_diameter.0));
+    collect!(validate_pin_count(plate.pin_count));
+    collect!(validate_plate_thickness(plate.plate_thickness.0));
+    collect!(validate_expected_force(plate.expected_force_per_pin.0));
 
-    Ok(())
+    // Phase 2: Stress analysis — only runs when Phase 1 is clean, since stress
+    // math requires non-zero, valid inputs to avoid divide-by-zero.
+    if errors.is_empty() {
+        collect!(validate_pin_bearing_stress(plate));
+        collect!(validate_bolt_bearing_stress(plate));
+        collect!(validate_plate_bending_stress(plate));
+        collect!(validate_bolt_edge_distance(plate));
+        collect!(validate_pin_clearance(plate));
+    }
+
+    if errors.is_empty() { Ok(()) } else { Err(errors) }
 }
 
 pub fn validate_bolt_spacing(value: u16) -> Result<(), PlateValidationError> {
@@ -385,36 +398,65 @@ pub enum PlateValidationError {
     },
 }
 
+impl PlateValidationError {
+    /// Returns the form field name(s) most directly implicated by this error.
+    /// Used by the frontend to highlight relevant inputs.
+    pub fn related_fields(&self) -> &'static [&'static str] {
+        match self {
+            Self::BoltSpacingTooSmall => &["boltSpacing"],
+            Self::BoltSizeInvalid => &["boltSize"],
+            Self::BracketHeightInvalid => &["bracketHeight"],
+            Self::BracketWidthInvalid => &["bracketWidth"],
+            Self::MaterialInvalid => &["material"],
+            Self::PinDiameterInvalid => &["pinDiameter"],
+            Self::PinCountTooSmall | Self::PinCountTooLarge => &["pinCount"],
+            Self::PlateThicknessInvalid => &["plateThickness"],
+            Self::ExpectedForceTooSmall | Self::ExpectedForceTooLarge => &["expectedForce"],
+            Self::PinBearingStressExceeded { .. } => {
+                &["pinDiameter", "plateThickness", "expectedForce"]
+            }
+            Self::BoltBearingStressExceeded { .. } => {
+                &["boltSize", "plateThickness", "expectedForce"]
+            }
+            Self::PlateBendingStressExceeded => {
+                &["plateThickness", "boltSpacing", "expectedForce"]
+            }
+            Self::BoltEdgeDistanceTooSmall { .. } => &["bracketWidth", "boltSpacing", "boltSize"],
+            Self::InsufficientPinClearance { .. } => &["bracketHeight", "pinDiameter", "pinCount"],
+        }
+    }
+}
+
 impl core::fmt::Display for PlateValidationError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::BoltSpacingTooSmall => write!(f, "bolt spacing must be greater than 0"),
+            Self::BoltSpacingTooSmall => write!(f, "Bolt spacing must be greater than 0"),
             Self::BoltSizeInvalid => write!(
                 f,
-                "bolt size must be a standard ISO metric size: M3, M4, M5, M6, M8, M10, or M12"
+                "Bolt size must be a standard ISO metric size: M3, M4, M5, M6, M8, M10, or M12"
             ),
-            Self::BracketHeightInvalid => write!(f, "bracket height must be greater than 0"),
-            Self::BracketWidthInvalid => write!(f, "bracket width must be greater than 0"),
+            Self::BracketHeightInvalid => write!(f, "Bracket height must be greater than 0"),
+            Self::BracketWidthInvalid => write!(f, "Bracket width must be greater than 0"),
             Self::MaterialInvalid => write!(
                 f,
-                "material must be one of: aluminum, stainless_steel, carbon_steel, or brass"
+                "Material must be one of: aluminum, stainless_steel, carbon_steel, or brass"
             ),
-            Self::PinDiameterInvalid => write!(f, "pin diameter must be greater than 0"),
-            Self::PinCountTooSmall => write!(f, "pin count must be at least 1"),
-            Self::PinCountTooLarge => write!(f, "pin count must not exceed 12"),
-            Self::PlateThicknessInvalid => write!(f, "plate thickness must be greater than 0"),
+            Self::PinDiameterInvalid => write!(f, "Pin diameter must be greater than 0"),
+            Self::PinCountTooSmall => write!(f, "Pin count must be at least 1"),
+            Self::PinCountTooLarge => write!(f, "Pin count must not exceed 12"),
+            Self::PlateThicknessInvalid => write!(f, "Plate thickness must be greater than 0"),
             Self::ExpectedForceTooSmall => {
-                write!(f, "expected force per pin must be greater than 0")
+                write!(f, "Expected force per pin must be greater than 0")
             }
             Self::ExpectedForceTooLarge => {
-                write!(f, "expected force per pin must not exceed 100,000 N")
+                write!(f, "Expected force per pin must not exceed 100,000 N")
             }
             Self::PinBearingStressExceeded {
                 design_force_n,
                 allowable_force_n,
             } => write!(
                 f,
-                "pin bearing stress exceeded: design force {} N exceeds allowable {} N",
+                "Pin bearing stress exceeded: design force {} N exceeds allowable {} N",
                 design_force_n, allowable_force_n
             ),
             Self::BoltBearingStressExceeded {
@@ -422,18 +464,18 @@ impl core::fmt::Display for PlateValidationError {
                 allowable_per_bolt_n,
             } => write!(
                 f,
-                "bolt bearing stress exceeded: {} N per bolt exceeds allowable {} N",
+                "Bolt bearing stress exceeded: {} N per bolt exceeds allowable {} N",
                 force_per_bolt_n, allowable_per_bolt_n
             ),
             Self::PlateBendingStressExceeded => {
-                write!(f, "plate bending stress exceeded: plate too thin for the applied load")
+                write!(f, "Plate bending stress exceeded: plate too thin for the applied load")
             }
             Self::BoltEdgeDistanceTooSmall {
                 available_mm,
                 required_mm,
             } => write!(
                 f,
-                "bolt edge distance too small: {} mm available, {} mm required",
+                "Bolt edge distance too small: {} mm available, {} mm required",
                 available_mm, required_mm
             ),
             Self::InsufficientPinClearance {
@@ -441,7 +483,7 @@ impl core::fmt::Display for PlateValidationError {
                 required_mm,
             } => write!(
                 f,
-                "insufficient pin clearance: bracket height {} mm, need at least {} mm",
+                "Insufficient pin clearance: bracket height {} mm, need at least {} mm",
                 bracket_height_mm, required_mm
             ),
         }
@@ -619,10 +661,7 @@ mod tests {
         plate.bolt_spacing = Millimeters(0);
         let result = validate(&plate);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            PlateValidationError::BoltSpacingTooSmall
-        ));
+        assert!(result.unwrap_err().iter().any(|e| matches!(e, PlateValidationError::BoltSpacingTooSmall)));
     }
 
     // --- Force validation ---
@@ -645,10 +684,7 @@ mod tests {
     fn test_full_plate_zero_force_rejected() {
         let mut plate = valid_plate();
         plate.expected_force_per_pin = Newtons(0);
-        assert!(matches!(
-            validate(&plate).unwrap_err(),
-            PlateValidationError::ExpectedForceTooSmall
-        ));
+        assert!(validate(&plate).unwrap_err().iter().any(|e| matches!(e, PlateValidationError::ExpectedForceTooSmall)));
     }
 
     // --- Pin bearing stress ---
@@ -960,51 +996,51 @@ mod tests {
     fn test_error_display_messages() {
         assert_eq!(
             PlateValidationError::BoltSpacingTooSmall.to_string(),
-            "bolt spacing must be greater than 0"
+            "Bolt spacing must be greater than 0"
         );
         assert_eq!(
             PlateValidationError::BoltSizeInvalid.to_string(),
-            "bolt size must be a standard ISO metric size: M3, M4, M5, M6, M8, M10, or M12"
+            "Bolt size must be a standard ISO metric size: M3, M4, M5, M6, M8, M10, or M12"
         );
         assert_eq!(
             PlateValidationError::BracketHeightInvalid.to_string(),
-            "bracket height must be greater than 0"
+            "Bracket height must be greater than 0"
         );
         assert_eq!(
             PlateValidationError::BracketWidthInvalid.to_string(),
-            "bracket width must be greater than 0"
+            "Bracket width must be greater than 0"
         );
         assert_eq!(
             PlateValidationError::MaterialInvalid.to_string(),
-            "material must be one of: aluminum, stainless_steel, carbon_steel, or brass"
+            "Material must be one of: aluminum, stainless_steel, carbon_steel, or brass"
         );
         assert_eq!(
             PlateValidationError::PinDiameterInvalid.to_string(),
-            "pin diameter must be greater than 0"
+            "Pin diameter must be greater than 0"
         );
         assert_eq!(
             PlateValidationError::PinCountTooSmall.to_string(),
-            "pin count must be at least 1"
+            "Pin count must be at least 1"
         );
         assert_eq!(
             PlateValidationError::PinCountTooLarge.to_string(),
-            "pin count must not exceed 12"
+            "Pin count must not exceed 12"
         );
         assert_eq!(
             PlateValidationError::PlateThicknessInvalid.to_string(),
-            "plate thickness must be greater than 0"
+            "Plate thickness must be greater than 0"
         );
         assert_eq!(
             PlateValidationError::ExpectedForceTooSmall.to_string(),
-            "expected force per pin must be greater than 0"
+            "Expected force per pin must be greater than 0"
         );
         assert_eq!(
             PlateValidationError::ExpectedForceTooLarge.to_string(),
-            "expected force per pin must not exceed 100,000 N"
+            "Expected force per pin must not exceed 100,000 N"
         );
         assert_eq!(
             PlateValidationError::PlateBendingStressExceeded.to_string(),
-            "plate bending stress exceeded: plate too thin for the applied load"
+            "Plate bending stress exceeded: plate too thin for the applied load"
         );
     }
 
@@ -1027,10 +1063,7 @@ mod tests {
     fn test_full_plate_rejects_excessive_force() {
         let mut plate = valid_plate();
         plate.expected_force_per_pin = Newtons(100_001);
-        assert!(matches!(
-            validate(&plate).unwrap_err(),
-            PlateValidationError::ExpectedForceTooLarge
-        ));
+        assert!(validate(&plate).unwrap_err().iter().any(|e| matches!(e, PlateValidationError::ExpectedForceTooLarge)));
     }
 
     #[test]

@@ -18,7 +18,9 @@
       "Bash(terraform validate:*)",
       "Bash(terraform state show:*)",
       "Bash(terraform state list:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(bun run:*)"
     ],
     "deny": [],
     "ask": []

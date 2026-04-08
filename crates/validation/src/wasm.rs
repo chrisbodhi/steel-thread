@@ -122,7 +122,9 @@ pub fn wasm_validate_stress(
         expected_force_per_pin: Newtons(expected_force_per_pin),
     };
 
-    crate::validate(&plate).map_err(|e| e.to_string())
+    crate::validate(&plate).map_err(|errors| {
+        errors.iter().map(|e| e.to_string()).collect::<alloc::vec::Vec<_>>().join("; ")
+    })
 }
 
 /// Returns the minimum recommended plate thickness in mm.

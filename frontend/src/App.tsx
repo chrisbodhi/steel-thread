@@ -37,8 +37,6 @@ import {
   validatePinCount,
   validatePlateThickness,
   validateExpectedForce,
-  validateStress,
-  getMinimumThickness,
   type ValidationResult,
 } from "./lib/validation";
 
@@ -49,6 +47,7 @@ function Combined({
   validator,
   onValidationChange,
   unit,
+  serverError,
 }: {
   forProp: string;
   name: string;
@@ -56,6 +55,7 @@ function Combined({
   validator: (value: number) => Promise<ValidationResult>;
   onValidationChange?: (fieldName: string, isValid: boolean) => void;
   unit?: string;
+  serverError?: boolean;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [validationResult, setValidationResult] = useState<ValidationResult>({
@@ -91,7 +91,7 @@ function Combined({
     }
   };
 
-  const isInvalid = touched && !validationResult.valid;
+  const isInvalid = (touched && !validationResult.valid) || !!serverError;
 
   return (
     <div className="space-y-1.5">
@@ -114,7 +114,7 @@ function Combined({
           isInvalid ? "border-destructive focus-visible:ring-destructive" : ""
         }
       />
-      {isInvalid && (
+      {touched && !validationResult.valid && (
         <p className="text-[10px] text-destructive font-medium">
           {validationResult.error}
         </p>
@@ -137,11 +137,13 @@ function BoltSizeSelect({
   name,
   defaultValue = "M10",
   onValidationChange,
+  serverError,
 }: {
   forProp: string;
   name: string;
   defaultValue?: string;
   onValidationChange?: (fieldName: string, isValid: boolean) => void;
+  serverError?: boolean;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [validationResult, setValidationResult] = useState<ValidationResult>({
@@ -167,7 +169,7 @@ function BoltSizeSelect({
     }
   };
 
-  const isInvalid = touched && !validationResult.valid;
+  const isInvalid = (touched && !validationResult.valid) || !!serverError;
 
   return (
     <div className="space-y-1.5">
@@ -194,7 +196,7 @@ function BoltSizeSelect({
           ))}
         </SelectContent>
       </Select>
-      {isInvalid && (
+      {touched && !validationResult.valid && (
         <p className="text-[10px] text-destructive font-medium">
           {validationResult.error}
         </p>
@@ -208,11 +210,13 @@ function MaterialSelect({
   name,
   defaultValue = "aluminum",
   onValidationChange,
+  serverError,
 }: {
   forProp: string;
   name: string;
   defaultValue?: string;
   onValidationChange?: (fieldName: string, isValid: boolean) => void;
+  serverError?: boolean;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [validationResult, setValidationResult] = useState<ValidationResult>({
@@ -238,7 +242,7 @@ function MaterialSelect({
     }
   };
 
-  const isInvalid = touched && !validationResult.valid;
+  const isInvalid = (touched && !validationResult.valid) || !!serverError;
 
   return (
     <div className="space-y-1.5">
@@ -265,7 +269,7 @@ function MaterialSelect({
           ))}
         </SelectContent>
       </Select>
-      {isInvalid && (
+      {touched && !validationResult.valid && (
         <p className="text-[10px] text-destructive font-medium">
           {validationResult.error}
         </p>
@@ -291,16 +295,16 @@ function FieldGroup({
   );
 }
 
+type ErrorDetail = { message: string; fields: string[] };
+
 export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ErrorDetail[]>([]);
+  const [minimumThicknessMm, setMinimumThicknessMm] = useState<number | null>(null);
+  const [networkError, setNetworkError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [modelSrc, setModelSrc] = useState<string | null>(null);
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
-  const [stressResult, setStressResult] = useState<{
-    error?: string;
-    minThickness?: number;
-  } | null>(null);
   const [fieldValidationState, setFieldValidationState] = useState<
     Record<string, boolean>
   >({
@@ -329,49 +333,31 @@ export function App() {
     (isValid) => isValid,
   );
 
+  const serverErrorFields = new Set(validationErrors.flatMap((e) => e.fields));
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setIsLoading(true);
     setDownloadUrl(null);
-    setErrorMessage(null);
+    setValidationErrors([]);
+    setMinimumThicknessMm(null);
+    setNetworkError(null);
 
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
 
-      const params = {
-        boltSpacing: Number(formData.get("boltSpacing")),
-        boltSize: String(formData.get("boltSize")),
-        bracketHeight: Number(formData.get("bracketHeight")),
-        bracketWidth: Number(formData.get("bracketWidth")),
-        material: String(formData.get("material")),
-        pinDiameter: Number(formData.get("pinDiameter")),
-        pinCount: Number(formData.get("pinCount")),
-        plateThickness: Number(formData.get("plateThickness")),
-        expectedForcePerPin: Number(formData.get("expectedForce")),
-      };
-
-      // Run stress check before submitting
-      const stress = await validateStress(params);
-      if (!stress.valid) {
-        const minT = await getMinimumThickness(params);
-        setStressResult({ error: stress.error, minThickness: minT });
-        setIsLoading(false);
-        return;
-      }
-      setStressResult(null);
-
       const body = JSON.stringify({
-        bolt_spacing: params.boltSpacing,
-        bolt_size: params.boltSize,
-        bracket_height: params.bracketHeight,
-        bracket_width: params.bracketWidth,
-        material: params.material,
-        pin_diameter: params.pinDiameter,
-        pin_count: params.pinCount,
-        plate_thickness: params.plateThickness,
-        expected_force_per_pin: params.expectedForcePerPin,
+        bolt_spacing: Number(formData.get("boltSpacing")),
+        bolt_size: String(formData.get("boltSize")),
+        bracket_height: Number(formData.get("bracketHeight")),
+        bracket_width: Number(formData.get("bracketWidth")),
+        material: String(formData.get("material")),
+        pin_diameter: Number(formData.get("pinDiameter")),
+        pin_count: Number(formData.get("pinCount")),
+        plate_thickness: Number(formData.get("plateThickness")),
+        expected_force_per_pin: Number(formData.get("expectedForce")),
       });
 
       const res = await fetch("/api/generate", {
@@ -382,18 +368,17 @@ export function App() {
 
       const data = await res.json();
 
-      console.log(JSON.stringify(data, null, 2));
-
       if (data.success && data.download_url) {
         setDownloadUrl(data.download_url);
         setModelSrc(`${data.gltf_url}?t=${Date.now()}`);
       } else if (data.errors && data.errors.length > 0) {
-        setErrorMessage(data.errors.join(", "));
+        setValidationErrors(data.errors);
+        setMinimumThicknessMm(data.minimum_thickness_mm ?? null);
       } else {
-        setErrorMessage("An unknown error occurred");
+        setNetworkError("An unknown error occurred");
       }
     } catch (error) {
-      setErrorMessage(String(error));
+      setNetworkError(String(error));
     } finally {
       setIsLoading(false);
     }
@@ -521,6 +506,7 @@ export function App() {
                       validator={validateBracketHeight}
                       onValidationChange={handleValidationChange}
                       unit="mm"
+                      serverError={serverErrorFields.has("bracketHeight")}
                     />
                     <Combined
                       forProp="bracketWidth"
@@ -529,6 +515,7 @@ export function App() {
                       validator={validateBracketWidth}
                       onValidationChange={handleValidationChange}
                       unit="mm"
+                      serverError={serverErrorFields.has("bracketWidth")}
                     />
                     <Combined
                       forProp="plateThickness"
@@ -537,12 +524,14 @@ export function App() {
                       validator={validatePlateThickness}
                       onValidationChange={handleValidationChange}
                       unit="mm"
+                      serverError={serverErrorFields.has("plateThickness")}
                     />
                     <MaterialSelect
                       forProp="material"
                       name="Material"
                       defaultValue="aluminum"
                       onValidationChange={handleValidationChange}
+                      serverError={serverErrorFields.has("material")}
                     />
                   </FieldGroup>
 
@@ -554,12 +543,14 @@ export function App() {
                       validator={validateBoltSpacing}
                       onValidationChange={handleValidationChange}
                       unit="mm"
+                      serverError={serverErrorFields.has("boltSpacing")}
                     />
                     <BoltSizeSelect
                       forProp="boltSize"
                       name="Bolt Size"
                       defaultValue="M10"
                       onValidationChange={handleValidationChange}
+                      serverError={serverErrorFields.has("boltSize")}
                     />
                   </FieldGroup>
 
@@ -571,6 +562,7 @@ export function App() {
                       validator={validatePinDiameter}
                       onValidationChange={handleValidationChange}
                       unit="mm"
+                      serverError={serverErrorFields.has("pinDiameter")}
                     />
                     <Combined
                       forProp="pinCount"
@@ -578,6 +570,7 @@ export function App() {
                       defaultValue="6"
                       validator={validatePinCount}
                       onValidationChange={handleValidationChange}
+                      serverError={serverErrorFields.has("pinCount")}
                     />
                   </FieldGroup>
 
@@ -589,6 +582,7 @@ export function App() {
                       validator={(v) => validateExpectedForce(v)}
                       onValidationChange={handleValidationChange}
                       unit="N"
+                      serverError={serverErrorFields.has("expectedForce")}
                     />
                     <div className="flex items-end">
                       <p className="text-[10px] text-muted-foreground pb-2">
@@ -646,29 +640,49 @@ export function App() {
                       </p>
                     )}
 
-                    {stressResult?.error && (
-                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-start gap-1.5">
+                    {validationErrors.length > 0 && (
+                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 space-y-1.5">
+                        <ul className="space-y-1">
+                          {validationErrors.map((err, i) => (
+                            <li key={i} className="text-xs text-destructive font-medium flex items-start gap-1.5">
+                              <svg
+                                className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                              </svg>
+                              {err.message}
+                            </li>
+                          ))}
+                        </ul>
+                        {minimumThicknessMm !== null && (
+                          <p className="text-[10px] text-destructive/80 pl-5">
+                            Minimum recommended thickness: {minimumThicknessMm} mm
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {networkError && (
+                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
                           <svg
-                            className="w-4 h-4 shrink-0 mt-0.5"
+                            className="w-4 h-4 shrink-0"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
                           >
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
                           </svg>
-                          <span>
-                            {stressResult.error}
-                            {stressResult.minThickness ? (
-                              <span className="block mt-1 text-[10px] opacity-80">
-                                Minimum recommended thickness:{" "}
-                                {stressResult.minThickness} mm
-                              </span>
-                            ) : null}
-                          </span>
+                          {networkError}
                         </p>
                       </div>
                     )}
@@ -716,24 +730,6 @@ export function App() {
                       </div>
                     )}
 
-                    {errorMessage && (
-                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                        <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
-                          <svg
-                            className="w-4 h-4 shrink-0"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                          </svg>
-                          {errorMessage}
-                        </p>
-                      </div>
-                    )}
                 </div>
               </form>
             </Card>
