@@ -469,12 +469,12 @@ export function App() {
             lg:w-[420px] xl:w-[480px] shrink-0
             transition-all duration-300 ease-out
             ${isPanelExpanded ? "max-h-[70vh] lg:max-h-none" : "max-h-0 lg:max-h-none"}
-            overflow-hidden lg:overflow-y-auto
+            overflow-hidden lg:h-full flex flex-col
           `}
         >
-          <div className="h-full p-4 lg:p-6 lg:pr-8 space-y-4">
+          <div className="h-full p-4 lg:p-6 lg:pr-8 flex flex-col">
             <Card
-              className="flex-1 backdrop-blur-xl bg-card/80 border-border/50 shadow-2xl"
+              className="flex-1 flex flex-col backdrop-blur-xl bg-card/80 border-border/50 shadow-2xl overflow-hidden"
               data-card
             >
               <CardHeader className="pb-4">
@@ -495,8 +495,8 @@ export function App() {
                   <AboutButton />
                 </div>
               </CardHeader>
-              <form onSubmit={handleSubmit}>
-              <CardContent className="overflow-y-auto max-h-[calc(70vh-180px)] lg:max-h-[calc(100vh-400px)]">
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-6">
                   <FieldGroup title="Dimensions">
                     <Combined
@@ -593,7 +593,7 @@ export function App() {
 
                 </div>
               </CardContent>
-              <div className="px-6 pb-6 pt-2 space-y-3">
+              <div className="px-6 pb-6 pt-2 space-y-3 shrink-0">
                     <Button
                       type="submit"
                       className="w-full h-11 text-sm font-semibold uppercase tracking-wider transition-all"
