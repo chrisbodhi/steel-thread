@@ -180,7 +180,7 @@ The project uses GitHub Actions for continuous integration and deployment:
 
 **CI Workflow** (`.github/workflows/ci.yml`):
 - Runs on all pull requests targeting master
-- **test-rust**: Runs `cargo test` and `cargo clippy`
+- **test-rust**: Runs `cargo test`, `cargo clippy`, and `scripts/check-api-sync.sh`
 - **test-frontend**: Builds frontend to catch TypeScript errors
 
 **Build Workflow** (`.github/workflows/build.yml`):
@@ -259,6 +259,37 @@ Documentation is generated using `utoipa` and `utoipa-swagger-ui` crates.
 | GET | `/api/docs` | Interactive Swagger UI documentation |
 | GET | `/api/openapi.json` | OpenAPI specification (JSON) |
 
+### Keeping API docs and the Claude Skill in sync
+
+`scripts/check-api-sync.sh` is the single source of truth for verifying that
+every API surface is up to date. It hashes the OpenAPI-relevant source files
+(`crates/web/src/lib.rs` and `crates/domain/src/lib.rs`) and compares against a
+committed hash at `.claude/skills/platerator-api/.api-hash`. The same script
+runs from two places:
+
+- **Claude `PostToolUse` hook** (configured in `.claude/settings.json`) — fires
+  after every `Edit`/`Write`/`MultiEdit` so drift is caught mid-session.
+- **CI `test-rust` job** (`.github/workflows/ci.yml`) — emits a file-level
+  `::error::` annotation on the PR and a markdown block in
+  `$GITHUB_STEP_SUMMARY`, both surfaced cleanly by `gh run view` and
+  `gh run view --log-failed`.
+
+When the check fails, review and update all three docs, then refresh the hash:
+
+1. `.claude/skills/platerator-api/SKILL.md` — the skill external API users load.
+2. The endpoint table above.
+3. The `### Calling the API` fetch example in this file.
+
+```sh
+just update-api-hash     # recomputes and writes .api-hash
+git add .claude/skills/platerator-api/.api-hash \
+        .claude/skills/platerator-api/SKILL.md \
+        CLAUDE.md
+```
+
+If you add or rename an OpenAPI-relevant source file, update the `INPUTS` array
+in `scripts/check-api-sync.sh` to match.
+
 ## Frontend Development
 
 ### Key Files
@@ -294,6 +325,7 @@ const response = await fetch('/api/generate', {
     pin_diameter: 10,
     pin_count: 6,
     plate_thickness: 8,
+    expected_force_per_pin: 500,  // Force per pin in Newtons
   }),
 });
 const data = await response.json();

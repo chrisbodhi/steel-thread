@@ -30,6 +30,14 @@ test:
     cargo test
     cd frontend && bun run typecheck
 
+# Verify the platerator-api skill and CLAUDE.md are in sync with the OpenAPI-relevant source
+check-api-sync:
+    ./scripts/check-api-sync.sh
+
+# Refresh the committed API hash after updating the skill and CLAUDE.md docs
+update-api-hash:
+    ./scripts/check-api-sync.sh --write
+
 # Clean build artifacts
 clean:
     cargo clean
