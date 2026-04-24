@@ -290,6 +290,20 @@ git add .claude/skills/platerator-api/.api-hash \
 If you add or rename an OpenAPI-relevant source file, update the `INPUTS` array
 in `scripts/check-api-sync.sh` to match.
 
+### Per-edit fast checks
+
+`scripts/post-edit-checks.sh` runs from the same `PostToolUse` hook and
+dispatches based on the edited file:
+
+- `crates/<crate>/src/**.rs` &rarr; `cargo clippy -p <crate> -- -D warnings`
+- `frontend/src/**.{ts,tsx}` &rarr; `bun run typecheck`
+
+These run **non-blocking** — the edit is never rolled back; failures print a
+remediation block to stderr (and a `::warning::` annotation when
+`GITHUB_ACTIONS` is set, in case we wire a fast-checks CI job later). The
+blocking versions of these commands still run in CI via `test-rust` and
+`test-frontend`.
+
 ## Frontend Development
 
 ### Key Files
