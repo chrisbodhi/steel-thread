@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/check-api-sync.sh"
+          },
+          {
+            "type": "command",
+            "command": "./scripts/post-edit-checks.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
