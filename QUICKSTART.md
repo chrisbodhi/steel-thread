@@ -66,7 +66,7 @@ git commit -m "Initial deployment"
 git push origin master
 
 # Wait for GitHub Actions (~5 min)
-# Check: https://github.com/yourusername/steel-thread/actions
+# Check: https://github.com/chrisbodhi/steel-thread/actions
 
 # Download build and deploy
 just deploy

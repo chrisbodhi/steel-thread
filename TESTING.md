@@ -6,16 +6,19 @@ This project has comprehensive test coverage across multiple layers.
 
 ```
 crates/
+├── domain/
+│   └── src/lib.rs              # Domain type tests (14 tests)
 ├── validation/
-│   └── src/lib.rs              # Unit tests for validation logic (18 tests)
+│   └── src/lib.rs              # Unit tests for validation logic (55 tests)
 ├── parametric/
 │   └── src/lib.rs              # Parametric generation tests (4 fast + 3 ignored)
 └── web/
+    ├── src/                    # Cache/session unit tests (5 tests)
     └── tests/
         └── api_tests.rs        # Integration tests for REST API (6 tests)
 ```
 
-**Total: 28 fast tests + 3 ignored integration tests**
+**Total: ~82 fast tests + 3 ignored integration tests** (see CLAUDE.md for current count)
 
 ## Running Tests
 
@@ -24,7 +27,7 @@ crates/
 cargo test
 
 # Run tests for a specific crate
-cargo test -p validation      # Validation only (18 tests)
+cargo test -p validation      # Validation only (55 tests)
 cargo test -p parametric      # Parametric tests (4 fast tests, skips 3 zoo CLI tests)
 cargo test -p web             # API tests only (6 tests)
 
@@ -173,16 +176,10 @@ async fn test_generate_endpoint_invalid_plate() {
 
 ## What's Not Tested (Yet)
 
-### Server Functions
-- The `#[server]` functions are harder to test in isolation
-- They're implicitly tested through the web UI
-- Could add end-to-end tests using browser automation
-
-### Component Tests
-- Leptos components are challenging to unit test
+### Frontend Component Tests
+- React components have no unit tests currently
 - Consider:
-  - Browser-based testing (Playwright, Cypress)
-  - Component testing with `wasm-bindgen-test`
+  - Browser-based E2E testing (Playwright, Cypress)
   - Visual regression testing
 
 ### Future Test Ideas
@@ -228,9 +225,6 @@ serde_json = "1.0"
 # Example GitHub Actions
 - name: Run tests
   run: cargo test --workspace --verbose
-
-- name: Run tests with features
-  run: cargo test -p web --features ssr
 ```
 
 ## Best Practices

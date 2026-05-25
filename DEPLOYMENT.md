@@ -145,7 +145,7 @@ git commit -m "Deploy to production"
 git push origin master
 
 # This triggers GitHub Actions to build the Linux binary
-# Check progress at: https://github.com/yourusername/steel-thread/actions
+# Check progress at: https://github.com/chrisbodhi/steel-thread/actions
 ```
 
 Wait for the build to complete (~5 minutes).

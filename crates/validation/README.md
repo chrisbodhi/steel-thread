@@ -62,8 +62,8 @@ The WASM module is automatically built as part of:
 ### Bolt Spacing
 - Must be greater than 0
 
-### Bolt Diameter
-- Must be greater than 0
+### Bolt Size
+- Must be a valid ISO metric size (M3, M4, M5, M6, M8, M10, M12)
 
 ### Bracket Height
 - Must be greater than 0
