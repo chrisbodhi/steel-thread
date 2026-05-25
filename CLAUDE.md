@@ -172,6 +172,8 @@ The server runs on port 3030 and serves:
 - API endpoints at `/api/*`
 - Frontend at all other routes
 
+**Production URL**: https://platerator.newschematic.org
+
 ## CI/CD
 
 ### GitHub Actions Workflows
@@ -179,14 +181,14 @@ The server runs on port 3030 and serves:
 The project uses GitHub Actions for continuous integration and deployment:
 
 **CI Workflow** (`.github/workflows/ci.yml`):
-- Runs on all pull requests targeting master
+- Runs on all pull requests targeting master and on pushes to master
 - **test-rust**: Runs `cargo test`, `cargo clippy`, and `scripts/check-api-sync.sh`
-- **test-frontend**: Builds frontend to catch TypeScript errors
+- **test-frontend**: Builds WASM module, type-checks frontend, and builds frontend
 
 **Build Workflow** (`.github/workflows/build.yml`):
-- Runs on pushes to master
+- Runs on pushes to master and via `workflow_dispatch`
 - **test**: Runs all tests and clippy
-- **build**: Builds the release binary for deployment to Lightsail
+- **build**: Builds Rust binary + WASM + frontend, packages them into a tarball (binary, `dist/`, KCL files), uploads as a 30-day GitHub Actions artifact, and publishes a GitHub release if a `v*` tag is pushed. Deployment to Lightsail is manual from the artifact.
 
 ### IMPORTANT: Cache Busting When Adding Dependencies
 

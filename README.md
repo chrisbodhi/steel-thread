@@ -7,8 +7,8 @@ An actuator plate configurator exploring web → parametric CAD → quote pipeli
 - [Rust](https://rustup.rs/) (latest stable)
 - [Bun](https://bun.sh/) (JavaScript runtime)
 - [Just](https://github.com/casey/just) (command runner) - install via `cargo install just` or `brew install just`
-- [Terraform](https://...) (IaC)
-- [AWS CLI](https://...) (Cloud provider)
+- [Terraform](https://developer.hashicorp.com/terraform/install) (IaC)
+- [AWS CLI](https://aws.amazon.com/cli/) (Cloud provider)
 
 ## Quick Start
 
@@ -140,7 +140,7 @@ See [QUICKSTART.md](./QUICKSTART.md) for step-by-step guide.
 Platerator includes interactive OpenAPI (Swagger) documentation:
 
 **Development**: http://localhost:3030/api/docs
-**Production**: https://your-domain.com/api/docs
+**Production**: https://platerator.newschematic.org/api/docs
 
 The Swagger UI provides:
 - Complete API endpoint documentation
