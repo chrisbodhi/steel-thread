@@ -24,6 +24,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 use utoipa::ToSchema;
 use utoipa_swagger_ui::SwaggerUi;
@@ -203,6 +204,7 @@ pub fn create_router(state: AppState) -> Router {
     api_routes
         .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
         .fallback_service(serve_dir)
+        .layer(TraceLayer::new_for_http())
 }
 
 /// Health check endpoint
