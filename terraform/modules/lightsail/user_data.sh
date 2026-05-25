@@ -42,7 +42,7 @@ Type=simple
 User=root
 WorkingDirectory=/opt/platerator
 Environment="PORT=8080"
-Environment="RUST_LOG=info"
+Environment="RUST_LOG=info,tower_http=debug"
 Environment="KCL_SRC_DIR=/opt/platerator/kcl"
 Environment="AWS_REGION=${aws_region}"
 Environment="S3_BUCKET_NAME=${s3_bucket_name}"
