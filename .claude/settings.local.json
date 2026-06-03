@@ -20,7 +20,9 @@
       "Bash(terraform state list:*)",
       "Bash(ls:*)",
       "Bash(grep:*)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)"
     ],
     "deny": [],
     "ask": []
