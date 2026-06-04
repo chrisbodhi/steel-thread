@@ -9,6 +9,13 @@ import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Button } from "./components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -299,6 +306,7 @@ type ErrorDetail = { message: string; fields: string[] };
 
 export function App() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [stlUrl, setStlUrl] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ErrorDetail[]>([]);
   const [minimumThicknessMm, setMinimumThicknessMm] = useState<number | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
@@ -340,6 +348,7 @@ export function App() {
 
     setIsLoading(true);
     setDownloadUrl(null);
+    setStlUrl(null);
     setValidationErrors([]);
     setMinimumThicknessMm(null);
     setNetworkError(null);
@@ -370,6 +379,7 @@ export function App() {
 
       if (data.success && data.download_url) {
         setDownloadUrl(data.download_url);
+        setStlUrl(data.stl_url ?? null);
         setModelSrc(`${data.gltf_url}?t=${Date.now()}`);
       } else if (data.errors && data.errors.length > 0) {
         setValidationErrors(data.errors);
@@ -702,31 +712,95 @@ export function App() {
                           </svg>
                           Model generated successfully
                         </p>
-                        <Button
-                          asChild
-                          variant="secondary"
-                          size="sm"
-                          className="w-full"
-                        >
-                          <a
-                            href={downloadUrl}
-                            download
-                            className="flex items-center gap-2"
+                        <div className="flex w-full">
+                          <Button
+                            asChild
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1 rounded-r-none"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
+                            <a
+                              href={downloadUrl}
+                              download="actuator_plate.step"
+                              className="flex items-center gap-2"
                             >
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <polyline points="7 10 12 15 17 10" />
-                              <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            Download STEP File
-                          </a>
-                        </Button>
+                              <svg
+                                className="w-4 h-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                              </svg>
+                              Download STEP
+                            </a>
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="rounded-l-none border-l border-border/40 px-2"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <a
+                                  href={downloadUrl}
+                                  download="actuator_plate.step"
+                                  className="flex items-center gap-2 cursor-pointer"
+                                >
+                                  Download STEP (.step)
+                                </a>
+                              </DropdownMenuItem>
+                              {stlUrl && (
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={stlUrl}
+                                    download="actuator_plate.stl"
+                                    className="flex items-center gap-2 cursor-pointer"
+                                  >
+                                    Download STL (.stl)
+                                  </a>
+                                </DropdownMenuItem>
+                              )}
+                              {stlUrl && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onSelect={() => {
+                                      const triggerDownload = (url: string, filename: string) => {
+                                        const a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = filename;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                      };
+                                      triggerDownload(downloadUrl!, "actuator_plate.step");
+                                      setTimeout(() => triggerDownload(stlUrl, "actuator_plate.stl"), 150);
+                                    }}
+                                  >
+                                    Download Both
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     )}
 

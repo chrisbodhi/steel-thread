@@ -58,6 +58,7 @@ mod tests {
         let files = CachedFiles {
             step_data: b"step content".to_vec(),
             gltf_data: b"gltf content".to_vec(),
+            stl_data: b"stl content".to_vec(),
         };
 
         assert!(!cache.exists("test-key").await);
@@ -69,6 +70,7 @@ mod tests {
         let retrieved = cache.get("test-key").await.unwrap();
         assert_eq!(retrieved.step_data, files.step_data);
         assert_eq!(retrieved.gltf_data, files.gltf_data);
+        assert_eq!(retrieved.stl_data, files.stl_data);
     }
 
     #[tokio::test]

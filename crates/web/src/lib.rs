@@ -39,6 +39,7 @@ use uuid::Uuid;
         generate_plate_model,
         download_step,
         download_gltf,
+        download_stl,
     ),
     components(
         schemas(
@@ -198,6 +199,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/generate", post(generate_plate_model))
         .route("/api/download/step/{session_id}", get(download_step))
         .route("/api/download/gltf/{session_id}", get(download_gltf))
+        .route("/api/download/stl/{session_id}", get(download_stl))
         .with_state(state);
 
     // Merge with Swagger UI
@@ -310,6 +312,7 @@ pub async fn generate_plate_model(
         let session_id = Uuid::new_v4().to_string();
         let download_url = format!("/api/download/step/{}", session_id);
         let gltf_url = format!("/api/download/gltf/{}", session_id);
+        let stl_url = format!("/api/download/stl/{}", session_id);
 
         // Store the cached files in session
         {
@@ -322,6 +325,7 @@ pub async fn generate_plate_model(
             message: "Model files retrieved from cache".to_string(),
             download_url,
             gltf_url,
+            stl_url,
             session_id,
         };
         return (
@@ -339,10 +343,12 @@ pub async fn generate_plate_model(
             let session_id = Uuid::new_v4().to_string();
             let download_url = format!("/api/download/step/{}", session_id);
             let gltf_url = format!("/api/download/gltf/{}", session_id);
+            let stl_url = format!("/api/download/stl/{}", session_id);
 
             // Read files for caching (do this before moving result)
             let step_data = tokio::fs::read(&result.step_file).await.ok();
             let gltf_data = tokio::fs::read(&result.gltf_file).await.ok();
+            let stl_data = tokio::fs::read(&result.stl_file).await.ok();
 
             // Store the generation result in session
             {
@@ -351,13 +357,14 @@ pub async fn generate_plate_model(
             }
 
             // Cache the files in the background (non-blocking)
-            if let (Some(step_data), Some(gltf_data)) = (step_data, gltf_data) {
+            if let (Some(step_data), Some(gltf_data), Some(stl_data)) = (step_data, gltf_data, stl_data) {
                 let cache = state.cache.clone();
                 let cache_key = cache_key.clone();
                 tokio::spawn(async move {
                     let files = CachedFiles {
                         step_data,
                         gltf_data,
+                        stl_data,
                     };
                     if let Err(e) = cache.put(&cache_key, &files).await {
                         tracing::warn!("Failed to cache files for key {}: {}", cache_key, e);
@@ -370,6 +377,7 @@ pub async fn generate_plate_model(
                 message: "Model files generated successfully".to_string(),
                 download_url,
                 gltf_url,
+                stl_url,
                 session_id,
             };
             (
@@ -534,6 +542,65 @@ async fn download_gltf(
     }
 }
 
+/// Download STL file
+///
+/// Downloads the generated STL model file for a given session ID.
+/// The session ID is obtained from the generate endpoint response.
+#[utoipa::path(
+    get,
+    path = "/api/download/stl/{session_id}",
+    tag = "generation",
+    params(
+        ("session_id" = String, Path, description = "Session ID from the generate endpoint")
+    ),
+    responses(
+        (status = 200, description = "STL file downloaded successfully", content_type = "model/stl"),
+        (status = 404, description = "Session not found or file not available", body = ErrorResponse)
+    )
+)]
+async fn download_stl(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let sessions = state.sessions.read().await;
+
+    let Some(session_data) = sessions.get(&session_id) else {
+        let res = ErrorResponse {
+            success: false,
+            got_it: false,
+            errors: vec!["Session not found. Please generate the model first.".to_string()],
+        };
+        return (StatusCode::NOT_FOUND, Json(res)).into_response();
+    };
+
+    let contents = match session_data {
+        SessionData::Cached(cached) => Ok(cached.stl_data.clone()),
+        SessionData::Generated(result) => tokio::fs::read(&result.stl_file).await,
+    };
+
+    match contents {
+        Ok(contents) => {
+            let headers = [
+                (header::CONTENT_TYPE, "model/stl"),
+                (
+                    header::CONTENT_DISPOSITION,
+                    "attachment; filename=\"actuator_plate.stl\"",
+                ),
+            ];
+            (StatusCode::OK, headers, contents).into_response()
+        }
+        Err(e) => {
+            tracing::error!("Failed to read STL file: {}", e);
+            let res = ErrorResponse {
+                success: false,
+                got_it: false,
+                errors: vec!["STL file not found. Please generate the model first.".to_string()],
+            };
+            (StatusCode::NOT_FOUND, Json(res)).into_response()
+        }
+    }
+}
+
 /// Health check response
 #[derive(Serialize, ToSchema)]
 struct OkResponse {
@@ -552,6 +619,8 @@ struct GenerateSuccessResponse {
     download_url: String,
     /// URL to download the glTF file
     gltf_url: String,
+    /// URL to download the STL file
+    stl_url: String,
     /// Session ID for retrieving the generated files
     session_id: String,
 }

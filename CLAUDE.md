@@ -258,6 +258,7 @@ Documentation is generated using `utoipa` and `utoipa-swagger-ui` crates.
 | POST | `/api/generate` | Generate STEP and glTF model files |
 | GET | `/api/download/step/{session_id}` | Download generated STEP file |
 | GET | `/api/download/gltf/{session_id}` | Download generated glTF file |
+| GET | `/api/download/stl/{session_id}` | Download generated STL file |
 | GET | `/api/docs` | Interactive Swagger UI documentation |
 | GET | `/api/openapi.json` | OpenAPI specification (JSON) |
 
@@ -345,6 +346,9 @@ const response = await fetch('/api/generate', {
   }),
 });
 const data = await response.json();
+// data.download_url → STEP file
+// data.stl_url      → STL file
+// data.gltf_url     → glTF preview
 ```
 
 ## Validation Architecture
