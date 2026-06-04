@@ -23,7 +23,8 @@
       "Bash(bun run:*)",
       "Bash(git checkout *)",
       "Bash(cargo check *)",
-      "WebFetch(domain:zoo.dev)"
+      "WebFetch(domain:zoo.dev)",
+      "Bash(just update-api-hash *)"
     ],
     "deny": [],
     "ask": []

@@ -1,13 +1,13 @@
 ---
 name: platerator-api
-description: Call the Platerator REST API to validate actuator plate parameters, generate STEP and glTF model files, and download the results. Use when the user asks about integrating with Platerator, validating a plate config, or generating a mounting plate programmatically.
+description: Call the Platerator REST API to validate actuator plate parameters, generate STEP, glTF, and STL model files, and download the results. Use when the user asks about integrating with Platerator, validating a plate config, or generating a mounting plate programmatically.
 ---
 
 # Platerator API
 
 Platerator generates custom mounting plates for linear actuators. The API takes
 a plate configuration, validates it against stress constraints, then produces
-downloadable STEP (manufacturing) and glTF (3D preview) files.
+downloadable STEP (manufacturing), glTF (3D preview), and STL (3D printing/mesh) files.
 
 Base URL in local development: `http://localhost:3030`.
 Interactive docs: `GET /api/docs`. Machine-readable spec: `GET /api/openapi.json`.
@@ -28,6 +28,7 @@ Interactive docs: `GET /api/docs`. Machine-readable spec: `GET /api/openapi.json
 | POST   | `/api/generate`                        | Generate STEP and glTF files             |
 | GET    | `/api/download/step/{session_id}`      | Download the generated STEP file         |
 | GET    | `/api/download/gltf/{session_id}`      | Download the generated glTF file         |
+| GET    | `/api/download/stl/{session_id}`       | Download the generated STL file          |
 | GET    | `/api/docs`                            | Swagger UI                               |
 | GET    | `/api/openapi.json`                    | OpenAPI 3.0 spec                         |
 
@@ -105,6 +106,7 @@ failing reason; use it to suggest a self-healing retry.
   "message": "Model files generated successfully",
   "download_url": "/api/download/step/<session_id>",
   "gltf_url": "/api/download/gltf/<session_id>",
+  "stl_url": "/api/download/stl/<session_id>",
   "session_id": "<uuid>"
 }
 ```
@@ -118,11 +120,11 @@ failing reason; use it to suggest a self-healing retry.
 }
 ```
 
-### `GET /api/download/step/{session_id}` and `/api/download/gltf/{session_id}`
+### `GET /api/download/step/{session_id}`, `/api/download/gltf/{session_id}`, `/api/download/stl/{session_id}`
 
-- **200 OK** — binary body. STEP responds with `Content-Type: application/STEP`
-  and `Content-Disposition: attachment`. glTF responds with
-  `Content-Type: model/gltf+json` and `Content-Disposition: inline`.
+- **200 OK** — binary body. STEP: `Content-Type: application/STEP`, `Content-Disposition: attachment`.
+  glTF: `Content-Type: model/gltf+json`, `Content-Disposition: inline`.
+  STL: `Content-Type: model/stl`, `Content-Disposition: attachment`.
 - **404 Not Found** — session id unknown or file unreadable. Call `/api/generate`
   first; sessions live in server memory and don't survive a restart.
 
@@ -138,9 +140,10 @@ curl -sS -X POST "$BASE/api/validate" -H 'Content-Type: application/json' -d "$P
 # 2. Generate; capture session id
 SID=$(curl -sS -X POST "$BASE/api/generate" -H 'Content-Type: application/json' -d "$PLATE" | jq -r .session_id)
 
-# 3. Download both files
+# 3. Download all files
 curl -sS -o plate.step "$BASE/api/download/step/$SID"
 curl -sS -o plate.gltf "$BASE/api/download/gltf/$SID"
+curl -sS -o plate.stl  "$BASE/api/download/stl/$SID"
 ```
 
 ## Common errors

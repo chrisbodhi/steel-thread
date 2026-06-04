@@ -3,11 +3,12 @@
 use async_trait::async_trait;
 use std::fmt;
 
-/// Cached model files containing STEP and glTF data.
+/// Cached model files containing STEP, glTF, and STL data.
 #[derive(Clone)]
 pub struct CachedFiles {
     pub step_data: Vec<u8>,
     pub gltf_data: Vec<u8>,
+    pub stl_data: Vec<u8>,
 }
 
 /// Errors that can occur during cache operations.

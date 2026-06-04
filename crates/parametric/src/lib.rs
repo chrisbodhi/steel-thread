@@ -37,6 +37,8 @@ pub struct GenerationResult {
     pub step_file: PathBuf,
     /// Path to the generated glTF file
     pub gltf_file: PathBuf,
+    /// Path to the generated STL file
+    pub stl_file: PathBuf,
 }
 
 /// Get the source directory containing KCL files.
@@ -150,13 +152,22 @@ pub fn generate_model(plate: &ActuatorPlate) -> Result<GenerationResult, AllErro
         return Err(AllErrors::GeneratorError(msg));
     }
 
+    // Generate STL file
+    if let Err(e) = generate_stl_in_dir(plate, temp_path) {
+        let msg = format!("Failed to generate STL file: {:?}", e);
+        eprintln!("{}", msg);
+        return Err(AllErrors::GeneratorError(msg));
+    }
+
     let step_file = temp_path.join("output.step");
     let gltf_file = temp_path.join("source.gltf");
+    let stl_file = temp_path.join("source.stl");
 
     Ok(GenerationResult {
         temp_dir,
         step_file,
         gltf_file,
+        stl_file,
     })
 }
 
@@ -174,6 +185,39 @@ fn generate_step_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus,
             "export",
             "--output-format=step",
             main_kcl.to_str().unwrap(),
+            dir.to_str().unwrap(),
+        ])
+        .status();
+
+    match status {
+        Ok(stat) => Ok(stat),
+        Err(e) => {
+            eprintln!("ouch: {}", e);
+            Err(ValidationError::NoStep)
+        }
+    }
+}
+
+/// Generate STL file in the specified directory by converting the STEP file
+fn generate_stl_in_dir(plate: &ActuatorPlate, dir: &Path) -> Result<ExitStatus, ValidationError> {
+    if validation::validate(plate).is_err() {
+        return Err(ValidationError::NoStep);
+    }
+
+    let step_file = dir.join("output.step");
+
+    if !step_file.exists() {
+        eprintln!("STEP file does not exist at {:?}", step_file);
+        return Err(ValidationError::NoStep);
+    }
+
+    let status = std::process::Command::new("zoo")
+        .args([
+            "file",
+            "convert",
+            "--src-format=step",
+            "--output-format=stl",
+            step_file.to_str().unwrap(),
             dir.to_str().unwrap(),
         ])
         .status();

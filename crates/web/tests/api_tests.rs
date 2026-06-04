@@ -109,6 +109,7 @@ async fn test_generate_endpoint_valid_plate() {
         assert!(json.get("session_id").is_some());
         assert!(json.get("download_url").is_some());
         assert!(json.get("gltf_url").is_some());
+        assert!(json.get("stl_url").is_some());
     } else {
         // If zoo is not available
         assert_eq!(status, StatusCode::BAD_REQUEST);
