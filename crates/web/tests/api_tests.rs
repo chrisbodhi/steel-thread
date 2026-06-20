@@ -195,6 +195,28 @@ async fn test_validate_endpoint_invalid_bolt_spacing() {
 }
 
 #[tokio::test]
+async fn test_version_endpoint() {
+    let app = create_test_router();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/version")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    let hash = json["git_hash"].as_str().unwrap();
+    assert!(!hash.is_empty());
+}
+
+#[tokio::test]
 async fn test_validate_endpoint_invalid_pin_count() {
     let app = create_test_router();
 

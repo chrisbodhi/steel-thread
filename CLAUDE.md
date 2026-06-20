@@ -254,6 +254,7 @@ Documentation is generated using `utoipa` and `utoipa-swagger-ui` crates.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
+| GET | `/api/version` | Git hash of the running build |
 | POST | `/api/validate` | Validate plate parameters without generating files |
 | POST | `/api/generate` | Generate STEP and glTF model files |
 | GET | `/api/download/step/{session_id}` | Download generated STEP file |

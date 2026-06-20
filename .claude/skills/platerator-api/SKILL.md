@@ -23,6 +23,7 @@ Interactive docs: `GET /api/docs`. Machine-readable spec: `GET /api/openapi.json
 | Method | Path                                   | Purpose                                  |
 | ------ | -------------------------------------- | ---------------------------------------- |
 | GET    | `/api/health`                          | Liveness check                           |
+| GET    | `/api/version`                         | Git hash of the running build            |
 | POST   | `/api/validate`                        | Validate a plate config without generating |
 | POST   | `/api/generate`                        | Generate STEP and glTF files             |
 | GET    | `/api/download/step/{session_id}`      | Download the generated STEP file         |
