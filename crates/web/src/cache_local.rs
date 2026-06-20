@@ -32,6 +32,10 @@ impl LocalCache {
     fn gltf_path(&self, cache_key: &str) -> PathBuf {
         self.cache_dir(cache_key).join("model.gltf")
     }
+
+    fn stl_path(&self, cache_key: &str) -> PathBuf {
+        self.cache_dir(cache_key).join("model.stl")
+    }
 }
 
 #[async_trait]
@@ -39,13 +43,16 @@ impl ModelCache for LocalCache {
     async fn exists(&self, cache_key: &str) -> bool {
         let step_path = self.step_path(cache_key);
         let gltf_path = self.gltf_path(cache_key);
+        let stl_path = self.stl_path(cache_key);
         tokio::fs::try_exists(&step_path).await.unwrap_or(false)
             && tokio::fs::try_exists(&gltf_path).await.unwrap_or(false)
+            && tokio::fs::try_exists(&stl_path).await.unwrap_or(false)
     }
 
     async fn get(&self, cache_key: &str) -> Result<CachedFiles, CacheError> {
         let step_path = self.step_path(cache_key);
         let gltf_path = self.gltf_path(cache_key);
+        let stl_path = self.stl_path(cache_key);
 
         let step_data = tokio::fs::read(&step_path)
             .await
@@ -67,9 +74,20 @@ impl ModelCache for LocalCache {
                 }
             })?;
 
+        let stl_data = tokio::fs::read(&stl_path)
+            .await
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    CacheError::NotFound
+                } else {
+                    CacheError::IoError(e.to_string())
+                }
+            })?;
+
         Ok(CachedFiles {
             step_data,
             gltf_data,
+            stl_data,
         })
     }
 
@@ -83,12 +101,17 @@ impl ModelCache for LocalCache {
 
         let step_path = self.step_path(cache_key);
         let gltf_path = self.gltf_path(cache_key);
+        let stl_path = self.stl_path(cache_key);
 
         tokio::fs::write(&step_path, &files.step_data)
             .await
             .map_err(|e| CacheError::IoError(e.to_string()))?;
 
         tokio::fs::write(&gltf_path, &files.gltf_data)
+            .await
+            .map_err(|e| CacheError::IoError(e.to_string()))?;
+
+        tokio::fs::write(&stl_path, &files.stl_data)
             .await
             .map_err(|e| CacheError::IoError(e.to_string()))?;
 
@@ -111,6 +134,7 @@ mod tests {
         let files = CachedFiles {
             step_data: b"step content".to_vec(),
             gltf_data: b"gltf content".to_vec(),
+            stl_data: b"stl content".to_vec(),
         };
 
         assert!(!cache.exists("test-key").await);
@@ -122,6 +146,7 @@ mod tests {
         let retrieved = cache.get("test-key").await.unwrap();
         assert_eq!(retrieved.step_data, files.step_data);
         assert_eq!(retrieved.gltf_data, files.gltf_data);
+        assert_eq!(retrieved.stl_data, files.stl_data);
     }
 
     #[tokio::test]
@@ -141,6 +166,7 @@ mod tests {
         let files = CachedFiles {
             step_data: b"step".to_vec(),
             gltf_data: b"gltf".to_vec(),
+            stl_data: b"stl".to_vec(),
         };
 
         cache.put("plate-abc123", &files).await.unwrap();
@@ -149,5 +175,6 @@ mod tests {
         assert!(temp_dir.path().join("plate-abc123").exists());
         assert!(temp_dir.path().join("plate-abc123/model.step").exists());
         assert!(temp_dir.path().join("plate-abc123/model.gltf").exists());
+        assert!(temp_dir.path().join("plate-abc123/model.stl").exists());
     }
 }

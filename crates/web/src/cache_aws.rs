@@ -52,6 +52,10 @@ impl AwsCache {
     fn gltf_key(&self, cache_key: &str) -> String {
         format!("{}/model.gltf", cache_key)
     }
+
+    fn stl_key(&self, cache_key: &str) -> String {
+        format!("{}/model.stl", cache_key)
+    }
 }
 
 #[async_trait]
@@ -125,11 +129,30 @@ impl ModelCache for AwsCache {
             .into_bytes()
             .to_vec();
 
+        // Fetch STL file from S3
+        let stl_result = self
+            .s3_client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(self.stl_key(cache_key))
+            .send()
+            .await
+            .map_err(|e| CacheError::AwsError(e.to_string()))?;
+
+        let stl_data = stl_result
+            .body
+            .collect()
+            .await
+            .map_err(|e| CacheError::AwsError(e.to_string()))?
+            .into_bytes()
+            .to_vec();
+
         tracing::info!("Cache hit for key: {}", cache_key);
 
         Ok(CachedFiles {
             step_data,
             gltf_data,
+            stl_data,
         })
     }
 
@@ -152,6 +175,17 @@ impl ModelCache for AwsCache {
             .key(self.gltf_key(cache_key))
             .body(ByteStream::from(files.gltf_data.clone()))
             .content_type("model/gltf+json")
+            .send()
+            .await
+            .map_err(|e| CacheError::AwsError(e.to_string()))?;
+
+        // Upload STL file to S3
+        self.s3_client
+            .put_object()
+            .bucket(&self.bucket)
+            .key(self.stl_key(cache_key))
+            .body(ByteStream::from(files.stl_data.clone()))
+            .content_type("model/stl")
             .send()
             .await
             .map_err(|e| CacheError::AwsError(e.to_string()))?;
