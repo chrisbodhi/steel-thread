@@ -214,7 +214,6 @@ async fn test_version_endpoint() {
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     let hash = json["git_hash"].as_str().unwrap();
     assert!(!hash.is_empty());
-    assert_ne!(hash, "");
 }
 
 #[tokio::test]
