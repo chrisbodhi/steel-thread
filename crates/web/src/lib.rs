@@ -35,6 +35,7 @@ use uuid::Uuid;
 #[openapi(
     paths(
         health,
+        version,
         validate_plate,
         generate_plate_model,
         download_step,
@@ -47,6 +48,7 @@ use uuid::Uuid;
             domain::Newtons,
             domain::BoltSize,
             OkResponse,
+            VersionResponse,
             ValidationSuccessResponse,
             StressSummary,
             ValidationErrorResponse,
@@ -56,7 +58,7 @@ use uuid::Uuid;
         )
     ),
     tags(
-        (name = "health", description = "Health check endpoints"),
+        (name = "health", description = "Health check and version endpoints"),
         (name = "validation", description = "Plate parameter validation endpoints"),
         (name = "generation", description = "Model generation and download endpoints"),
     ),
@@ -194,6 +196,7 @@ pub fn create_router(state: AppState) -> Router {
     // Create API routes
     let api_routes = Router::new()
         .route("/api/health", get(health))
+        .route("/api/version", get(version))
         .route("/api/validate", post(validate_plate))
         .route("/api/generate", post(generate_plate_model))
         .route("/api/download/step/{session_id}", get(download_step))
@@ -220,6 +223,22 @@ pub fn create_router(state: AppState) -> Router {
 )]
 async fn health() -> impl IntoResponse {
     let res = OkResponse { ok: true };
+    (StatusCode::OK, Json(res)).into_response()
+}
+
+/// Version endpoint
+///
+/// Returns the git commit hash of the running build.
+#[utoipa::path(
+    get,
+    path = "/api/version",
+    tag = "health",
+    responses(
+        (status = 200, description = "Build version info", body = VersionResponse)
+    )
+)]
+async fn version() -> impl IntoResponse {
+    let res = VersionResponse { git_hash: env!("GIT_HASH").to_string() };
     (StatusCode::OK, Json(res)).into_response()
 }
 
@@ -539,6 +558,13 @@ async fn download_gltf(
 struct OkResponse {
     /// Always true for successful health checks
     ok: bool,
+}
+
+/// Version response
+#[derive(Serialize, ToSchema)]
+struct VersionResponse {
+    /// Short git commit hash of the running build
+    git_hash: String,
 }
 
 /// Successful model generation response
