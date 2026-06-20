@@ -20,7 +20,10 @@
       "Bash(terraform state list:*)",
       "Bash(ls:*)",
       "Bash(grep:*)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(git checkout *)",
+      "Bash(cargo check *)",
+      "WebFetch(domain:zoo.dev)"
     ],
     "deny": [],
     "ask": []
